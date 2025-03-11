@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { useBot } from '@/context/BotContext';
 
 export const ServerTransferSection = () => {
   const [serverId, setServerId] = useState('');
@@ -15,8 +16,10 @@ export const ServerTransferSection = () => {
   const [progress, setProgress] = useState(0);
   const [usersTransferred, setUsersTransferred] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
+  
+  const { executeCommand, isConnected } = useBot();
 
-  const handleStartTransfer = () => {
+  const handleStartTransfer = async () => {
     if (!serverId) {
       toast.error("Please enter a server ID");
       return;
@@ -27,32 +30,48 @@ export const ServerTransferSection = () => {
       return;
     }
     
+    if (!isConnected) {
+      toast.error("Bot is not connected. Please try again later.");
+      return;
+    }
+    
     setIsProcessing(true);
     setProgress(0);
     setUsersTransferred(0);
     setTotalUsers(parseInt(amount));
     
-    toast.success(`Starting transfer to server ${serverId}`);
-    
-    // Simulate progress
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        const newProgress = prev + Math.random() * 5;
-        const newUsersTransferred = Math.floor((newProgress / 100) * parseInt(amount));
-        setUsersTransferred(newUsersTransferred);
-        
-        if (newProgress >= 100) {
-          clearInterval(interval);
-          setProgress(100);
-          setUsersTransferred(parseInt(amount));
-          setIsProcessing(false);
-          toast.success(`Successfully transferred ${amount} users to server ${serverId}`);
-          return 100;
-        }
-        
-        return newProgress;
+    try {
+      // Execute the join command via the bot
+      const response = await executeCommand('join', { 
+        gid: serverId, 
+        amt: parseInt(amount) 
       });
-    }, 800);
+      
+      toast.success(`Starting transfer to server ${serverId}`);
+      
+      // Simulate progress (in a real app, this would be updated via websockets or polling)
+      const interval = setInterval(() => {
+        setProgress(prev => {
+          const newProgress = prev + Math.random() * 5;
+          const newUsersTransferred = Math.floor((newProgress / 100) * parseInt(amount));
+          setUsersTransferred(newUsersTransferred);
+          
+          if (newProgress >= 100) {
+            clearInterval(interval);
+            setProgress(100);
+            setUsersTransferred(parseInt(amount));
+            setIsProcessing(false);
+            toast.success(`Successfully transferred ${amount} users to server ${serverId}`);
+            return 100;
+          }
+          
+          return newProgress;
+        });
+      }, 800);
+    } catch (error) {
+      toast.error("Failed to start transfer");
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -105,7 +124,7 @@ export const ServerTransferSection = () => {
         <CardFooter>
           <Button 
             onClick={handleStartTransfer} 
-            disabled={isProcessing} 
+            disabled={isProcessing || !isConnected} 
             className="w-full bg-discord-blurple hover:bg-discord-blurple/90 btn-shine"
           >
             {isProcessing ? 'Transferring...' : 'Start Transfer'}

@@ -6,16 +6,51 @@ import { StatisticsCard } from './StatisticsCard';
 import { NavBar } from './NavBar';
 import { motion } from 'framer-motion';
 import { Users, Server, RotateCw, ShieldCheck } from 'lucide-react';
+import { useBot } from '@/context/BotContext';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface DashboardProps {
   onLogout: () => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
+  const { status, checkConnection, connecting } = useBot();
+  
+  const handleRefreshConnection = () => {
+    checkConnection();
+    toast.info("Checking bot connection...");
+  };
+  
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <NavBar isAuthorized={true} onLogout={onLogout} />
+        
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-sm flex items-center gap-2">
+            <div className={`w-3 h-3 rounded-full ${
+              status.status === 'connected' ? 'bg-green-500' : 
+              status.status === 'connecting' ? 'bg-yellow-500' : 
+              'bg-red-500'
+            }`}></div>
+            <span>
+              Bot Status: {
+                status.status === 'connected' ? 'Online' : 
+                status.status === 'connecting' ? 'Connecting...' : 
+                'Offline'
+              }
+            </span>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefreshConnection}
+            disabled={connecting}
+          >
+            {connecting ? 'Checking...' : 'Refresh Connection'}
+          </Button>
+        </div>
         
         <motion.div
           initial={{ opacity: 0 }}

@@ -2,8 +2,12 @@
 import React from 'react';
 import { CommandCard } from './CommandCard';
 import { motion } from 'framer-motion';
+import { useBot } from '@/context/BotContext';
+import { toast } from 'sonner';
 
 export const CommandsPanel = () => {
+  const { executeCommand, isConnected } = useBot();
+  
   const commands = [
     {
       command: "-test",
@@ -37,6 +41,43 @@ export const CommandsPanel = () => {
     }
   ];
 
+  const handleCommandClick = async (command: string) => {
+    if (!isConnected) {
+      toast.error("Bot is not connected. Please try again later.");
+      return;
+    }
+
+    try {
+      const cmd = command.replace('-', '').split(' ')[0];
+      
+      toast.loading(`Executing ${command}...`);
+      
+      let response;
+      switch (cmd) {
+        case 'test':
+          response = await executeCommand('test');
+          toast.success(response.message);
+          break;
+        case 'authorized':
+          response = await executeCommand('authorized');
+          toast.success(`Current authorized users: ${response.count}`);
+          break;
+        case 'progress':
+          response = await executeCommand('progress');
+          toast.success(`Transfers completed: ${response.transfers}, Pending users: ${response.pendingUsers}`);
+          break;
+        case 'refreshtokens':
+          response = await executeCommand('refreshtokens');
+          toast.success(`Refreshed ${response.tokensRefreshed} tokens. Failed: ${response.failed}`);
+          break;
+        default:
+          toast.info(`For ${command}, please provide the required parameters`);
+      }
+    } catch (error) {
+      toast.error("Command execution failed");
+    }
+  };
+
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -60,7 +101,7 @@ export const CommandsPanel = () => {
       className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
     >
       {commands.map((cmd, index) => (
-        <motion.div key={index} variants={item}>
+        <motion.div key={index} variants={item} onClick={() => handleCommandClick(cmd.command)}>
           <CommandCard 
             command={cmd.command}
             description={cmd.description}
