@@ -6,12 +6,15 @@
 // This would be your bot's API endpoint in production
 const BOT_API_URL = import.meta.env.VITE_BOT_API_URL || 'https://api.example.com/discord-bot';
 
+// Define the connection status type
+export type BotConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+
 // Bot connection status
-let botConnectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error' = 'disconnected';
+let botConnectionStatus: BotConnectionStatus = 'disconnected';
 let botConnectionError: string | null = null;
 
 export interface BotStatus {
-  status: typeof botConnectionStatus;
+  status: BotConnectionStatus;
   error: string | null;
   lastChecked: Date | null;
 }
