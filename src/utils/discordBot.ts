@@ -58,6 +58,7 @@ export const checkBotStatus = async (): Promise<BotStatus> => {
  */
 export const sendBotCommand = async (command: string, params: Record<string, any> = {}): Promise<any> => {
   try {
+    // Fix the comparison by ensuring we're comparing to the string literal 'connected'
     if (botConnectionStatus !== 'connected') {
       await checkBotStatus();
       if (botConnectionStatus !== 'connected') {
