@@ -38,6 +38,26 @@ export const CommandsPanel = () => {
       command: "-set",
       description: "Sets the role once verified",
       example: "-set <roleid> <serverid>"
+    },
+    {
+      command: "-getGuilds",
+      description: "List all available servers",
+      example: "-getGuilds"
+    },
+    {
+      command: "-getChannels",
+      description: "List all channels in a server",
+      example: "-getChannels <guildId>"
+    },
+    {
+      command: "-getRoles",
+      description: "List all roles in a server",
+      example: "-getRoles <guildId>"
+    },
+    {
+      command: "-getMembers",
+      description: "List members in a server",
+      example: "-getMembers <guildId> <limit>"
     }
   ];
 
@@ -48,7 +68,8 @@ export const CommandsPanel = () => {
     }
 
     try {
-      const cmd = command.replace('-', '').split(' ')[0];
+      const parts = command.replace('-', '').split(' ');
+      const cmd = parts[0];
       
       toast.loading(`Executing ${command}...`);
       
@@ -69,6 +90,10 @@ export const CommandsPanel = () => {
         case 'refreshtokens':
           response = await executeCommand('refreshtokens');
           toast.success(`Refreshed ${response.tokensRefreshed} tokens. Failed: ${response.failed}`);
+          break;
+        case 'getGuilds':
+          response = await executeCommand('getGuilds');
+          toast.success(`Found ${response.guilds.length} servers`);
           break;
         default:
           toast.info(`For ${command}, please provide the required parameters`);

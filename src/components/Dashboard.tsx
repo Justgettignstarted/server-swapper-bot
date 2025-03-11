@@ -4,18 +4,21 @@ import { CommandsPanel } from './CommandsPanel';
 import { ServerTransferSection } from './ServerTransferSection';
 import { StatisticsCard } from './StatisticsCard';
 import { NavBar } from './NavBar';
+import { BotSetup } from './BotSetup';
+import { ServerInfoPanel } from './ServerInfoPanel';
 import { motion } from 'framer-motion';
 import { Users, Server, RotateCw, ShieldCheck } from 'lucide-react';
 import { useBot } from '@/context/BotContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface DashboardProps {
   onLogout: () => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
-  const { status, checkConnection, connecting } = useBot();
+  const { status, checkConnection, connecting, isConnected } = useBot();
   
   const handleRefreshConnection = () => {
     checkConnection();
@@ -52,52 +55,74 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </Button>
         </div>
         
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatisticsCard 
-              title="Authorized Users" 
-              value="783" 
-              icon={<Users className="h-6 w-6 text-primary" />} 
-            />
-            <StatisticsCard 
-              title="Servers" 
-              value="5" 
-              icon={<Server className="h-6 w-6 text-primary" />} 
-            />
-            <StatisticsCard 
-              title="Transfers Completed" 
-              value="13" 
-              icon={<RotateCw className="h-6 w-6 text-primary" />} 
-            />
-            <StatisticsCard 
-              title="Verification Rate" 
-              value="98%" 
-              icon={<ShieldCheck className="h-6 w-6 text-primary" />} 
-            />
+        {!isConnected && (
+          <div className="mb-6">
+            <BotSetup />
           </div>
-        </motion.div>
+        )}
         
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          <div className="lg:col-span-3">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              className="glass p-6 rounded-lg"
-            >
-              <h2 className="text-2xl font-bold mb-6">Available Commands</h2>
-              <CommandsPanel />
-            </motion.div>
-          </div>
-          
-          <div className="lg:col-span-2">
-            <ServerTransferSection />
-          </div>
-        </div>
+        {isConnected && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <StatisticsCard 
+                title="Authorized Users" 
+                value="783" 
+                icon={<Users className="h-6 w-6 text-primary" />} 
+              />
+              <StatisticsCard 
+                title="Servers" 
+                value="5" 
+                icon={<Server className="h-6 w-6 text-primary" />} 
+              />
+              <StatisticsCard 
+                title="Transfers Completed" 
+                value="13" 
+                icon={<RotateCw className="h-6 w-6 text-primary" />} 
+              />
+              <StatisticsCard 
+                title="Verification Rate" 
+                value="98%" 
+                icon={<ShieldCheck className="h-6 w-6 text-primary" />} 
+              />
+            </div>
+          </motion.div>
+        )}
+        
+        {isConnected && (
+          <Tabs defaultValue="commands" className="mb-8">
+            <TabsList className="w-full mb-6">
+              <TabsTrigger value="commands">Commands</TabsTrigger>
+              <TabsTrigger value="server-info">Server Information</TabsTrigger>
+              <TabsTrigger value="transfer">User Transfer</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="commands">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
+                className="glass p-6 rounded-lg"
+              >
+                <h2 className="text-2xl font-bold mb-6">Available Commands</h2>
+                <CommandsPanel />
+              </motion.div>
+            </TabsContent>
+            
+            <TabsContent value="server-info">
+              <ServerInfoPanel />
+            </TabsContent>
+            
+            <TabsContent value="transfer">
+              <div className="max-w-md mx-auto">
+                <ServerTransferSection />
+              </div>
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
     </div>
   );
