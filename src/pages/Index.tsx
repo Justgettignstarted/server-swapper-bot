@@ -4,6 +4,7 @@ import { Hero } from '@/components/Hero';
 import { Dashboard } from '@/components/Dashboard';
 import { AnimatePresence, motion } from 'framer-motion';
 import { checkPremiumStatus, getPremiumTier } from '@/components/premium/PaymentService';
+import { toast } from 'sonner';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -12,10 +13,12 @@ const Index = () => {
   const [premiumTier, setPremiumTier] = useState<string | null>(null);
 
   useEffect(() => {
+    // Get username from localStorage (would come from Discord OAuth in production)
     const storedUsername = localStorage.getItem('username');
     if (storedUsername) {
       setUsername(storedUsername);
       setIsAuthenticated(true);
+      toast.success(`Welcome back, ${storedUsername.split('#')[0]}!`);
     }
     
     // Get premium status and tier from localStorage
@@ -29,11 +32,17 @@ const Index = () => {
   }, []);
 
   const handleLogin = () => {
-    const newUsername = "DiscordUser" + Math.floor(Math.random() * 10000);
-    setUsername(newUsername);
-    setIsAuthenticated(true);
-    
-    localStorage.setItem('username', newUsername);
+    // In a real app, this would be handled by the Discord OAuth callback
+    // Here we're relying on the DiscordLoginButton component to set the username
+    const storedUsername = localStorage.getItem('username');
+    if (storedUsername) {
+      setUsername(storedUsername);
+      setIsAuthenticated(true);
+      
+      // Welcome toast with just the username part (without discriminator)
+      const displayName = storedUsername.split('#')[0];
+      toast.success(`Welcome, ${displayName}!`);
+    }
     
     // Check premium status on login
     const isPremiumUser = checkPremiumStatus();
@@ -50,6 +59,7 @@ const Index = () => {
     setUsername(undefined);
     
     localStorage.removeItem('username');
+    toast.info('You have been logged out');
   };
 
   const handleUpgrade = (isPremiumStatus: boolean, tier: string) => {

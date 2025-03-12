@@ -44,6 +44,20 @@ export const NavBar: React.FC<NavBarProps> = ({
     }
   };
 
+  // Split the Discord username into name and discriminator
+  const formatDiscordUsername = (discordName: string) => {
+    if (discordName && discordName.includes('#')) {
+      const [name, discriminator] = discordName.split('#');
+      return (
+        <>
+          <span className="text-sm font-medium">{name}</span>
+          <span className="text-xs text-discord-blurple">#{discriminator}</span>
+        </>
+      );
+    }
+    return <span className="text-sm font-medium">{discordName}</span>;
+  };
+
   const badgeStyles = getBadgeStyles();
 
   return (
@@ -69,7 +83,9 @@ export const NavBar: React.FC<NavBarProps> = ({
         {isAuthorized && username && (
           <div className="flex items-center gap-2 bg-discord-darker/30 px-3 py-1.5 rounded-md">
             <AtSign className="h-4 w-4 text-discord-blurple" />
-            <span className="text-sm font-medium">{username}</span>
+            <div className="flex items-center">
+              {formatDiscordUsername(username)}
+            </div>
             
             {isPremium && (
               <Badge 
