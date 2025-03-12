@@ -9,6 +9,10 @@ interface DiscordLoginButtonProps {
   onLogin: () => void;
 }
 
+// You can replace this with your actual Discord Client ID
+// This is a fallback if the environment variable is not set
+const DEFAULT_DISCORD_CLIENT_ID = '123456789012345678';
+
 export const DiscordLoginButton: React.FC<DiscordLoginButtonProps> = ({
   className,
   onLogin
@@ -18,8 +22,8 @@ export const DiscordLoginButton: React.FC<DiscordLoginButtonProps> = ({
   const handleClick = () => {
     setIsLoading(true);
     
-    // Real Discord OAuth implementation
-    const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID || '123456789012345678';
+    // Get the client ID from environment variables or use the default
+    const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID || DEFAULT_DISCORD_CLIENT_ID;
     const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
     const scope = encodeURIComponent('identify email guilds');
     const state = crypto.randomUUID(); // Generate a random state for security
