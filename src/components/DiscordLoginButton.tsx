@@ -39,7 +39,7 @@ export const DiscordLoginButton: React.FC<DiscordLoginButtonProps> = ({
         // Use port 8080 for local development with Vite
         redirectUri = 'http://localhost:8080/auth/callback';
       } else {
-        // For production environments
+        // For production environments - ensure this matches what's registered in Discord
         redirectUri = `${window.location.protocol}//${window.location.host}/auth/callback`;
       }
       
@@ -48,16 +48,19 @@ export const DiscordLoginButton: React.FC<DiscordLoginButtonProps> = ({
       
       const encodedRedirectUri = encodeURIComponent(redirectUri);
       
-      // Using the full scope list from your generated URL
-      const scope = encodeURIComponent('identify email guilds bot applications.commands guilds.members.read');
+      // Using a simplified scope list - just the essentials
+      const scope = encodeURIComponent('identify email guilds');
       
       const state = crypto.randomUUID(); // Generate a random state for security
       
       // Store the state in localStorage to verify when the user comes back
       localStorage.setItem('discordOAuthState', state);
       
-      // Redirect to Discord's OAuth page
-      window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodedRedirectUri}&response_type=code&scope=${scope}&state=${state}`;
+      // Redirect to Discord's OAuth page with correct parameters
+      const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodedRedirectUri}&response_type=code&scope=${scope}&prompt=consent&state=${state}`;
+      
+      console.log("Discord Auth URL:", authUrl);
+      window.location.href = authUrl;
     } catch (error) {
       console.error("Discord auth error:", error);
       setIsLoading(false);

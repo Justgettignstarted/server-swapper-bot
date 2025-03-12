@@ -12,51 +12,47 @@ export const DiscordCallback = () => {
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
-      // Get the code and state from the URL
-      const urlParams = new URLSearchParams(location.search);
-      const code = urlParams.get('code');
-      const state = urlParams.get('state');
-      const error = urlParams.get('error');
-      
-      // Verify that we have a code and there's no error
-      if (error) {
-        setError(`Authentication failed: ${error}`);
-        toast.error(`Discord authentication failed: ${error}`);
-        setProcessing(false);
-        setTimeout(() => navigate('/'), 3000);
-        return;
-      }
-      
-      if (!code) {
-        setError('No authorization code received');
-        toast.error('Authentication failed: No code received from Discord');
-        setProcessing(false);
-        setTimeout(() => navigate('/'), 3000);
-        return;
-      }
-
-      // Verify the state to prevent CSRF attacks
-      const storedState = localStorage.getItem('discordOAuthState');
-      if (!state || state !== storedState) {
-        setError('Invalid state parameter');
-        toast.error('Authentication failed: Security verification failed');
-        setProcessing(false);
-        setTimeout(() => navigate('/'), 3000);
-        return;
-      }
-
       try {
-        // In a production application, you would exchange this code for a token via a backend
-        // For this demo/prototype, we'll get the token details and simulate user data
-        console.log('Received valid Discord OAuth code:', code);
+        // Get the code and state from the URL
+        const urlParams = new URLSearchParams(location.search);
+        const code = urlParams.get('code');
+        const state = urlParams.get('state');
+        const errorParam = urlParams.get('error');
         
-        // In a real application with a backend, you would make an API call like:
-        // const response = await fetch('/api/auth/discord-callback', { 
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({ code, redirectUri: window.location.origin + '/auth/callback' })
-        // });
-        // const data = await response.json();
+        console.log("Auth callback received:", { code: code?.substring(0, 6) + "...", state, error: errorParam });
+        
+        // Verify that we have a code and there's no error
+        if (errorParam) {
+          console.error("Discord auth error:", errorParam);
+          setError(`Authentication failed: ${errorParam}`);
+          toast.error(`Discord authentication failed: ${errorParam}`);
+          setProcessing(false);
+          setTimeout(() => navigate('/'), 3000);
+          return;
+        }
+        
+        if (!code) {
+          console.error("No authorization code received");
+          setError('No authorization code received');
+          toast.error('Authentication failed: No code received from Discord');
+          setProcessing(false);
+          setTimeout(() => navigate('/'), 3000);
+          return;
+        }
+
+        // Verify the state to prevent CSRF attacks
+        const storedState = localStorage.getItem('discordOAuthState');
+        if (!state || state !== storedState) {
+          console.error("Invalid state parameter", { received: state, stored: storedState });
+          setError('Invalid state parameter');
+          toast.error('Authentication failed: Security verification failed');
+          setProcessing(false);
+          setTimeout(() => navigate('/'), 3000);
+          return;
+        }
+
+        // In a production application, you would exchange this code for a token via a backend
+        console.log('Received valid Discord OAuth code:', code.substring(0, 6) + "...");
         
         // Simulate successful authentication with mock data
         // In a real app, this would come from Discord's API response
@@ -77,8 +73,8 @@ export const DiscordCallback = () => {
         // Clear the OAuth state since we don't need it anymore
         localStorage.removeItem('discordOAuthState');
         
-        // Redirect back to the home page
-        navigate('/');
+        // Redirect back to the home page after a short delay
+        setTimeout(() => navigate('/'), 1500);
       } catch (err) {
         console.error('Error processing Discord callback:', err);
         setError('Failed to complete authentication');
