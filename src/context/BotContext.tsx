@@ -1,6 +1,14 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { checkBotStatus, sendBotCommand, BotStatus, fetchGuilds, fetchChannels, fetchRoles, fetchMembers } from '@/utils/discordBot';
+import { 
+  checkBotStatus, 
+  sendBotCommand, 
+  BotStatus, 
+  fetchGuilds, 
+  fetchChannels, 
+  fetchRoles, 
+  fetchMembers 
+} from '@/utils/discord';
 import { toast } from 'sonner';
 
 interface BotContextType {
