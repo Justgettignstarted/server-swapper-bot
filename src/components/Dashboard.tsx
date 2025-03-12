@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { CommandsPanel } from './CommandsPanel';
 import { ServerTransferSection } from './ServerTransferSection';
@@ -35,11 +34,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         setLoadingStats(true);
         try {
           // Get servers count directly from fetchGuilds
-          const guilds = await fetchGuilds();
-          const serverCount = guilds.length.toString();
-          setStats(prev => ({ ...prev, servers: serverCount }));
+          try {
+            const guilds = await fetchGuilds();
+            const serverCount = guilds.length.toString();
+            setStats(prev => ({ ...prev, servers: serverCount }));
+          } catch (error) {
+            console.error('Error fetching servers:', error);
+            toast.error('Failed to fetch server count');
+          }
           
-          // Use more reliable commands for other stats
+          // Use commands for other stats with proper error handling
           try {
             const authResponse = await executeCommand('authorized');
             if (authResponse && authResponse.success) {
@@ -47,8 +51,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             }
           } catch (error) {
             console.error('Error fetching authorized users:', error);
-            // Fallback to a reasonable default if the command fails
-            setStats(prev => ({ ...prev, authorizedUsers: '0' }));
+            toast.error('Failed to fetch user count');
           }
           
           try {
@@ -68,19 +71,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             }
           } catch (error) {
             console.error('Error fetching transfer progress:', error);
-            // Fallback to reasonable defaults
-            setStats(prev => ({ ...prev, transfers: '0', verificationRate: '0%' }));
+            toast.error('Failed to fetch transfer statistics');
           }
         } catch (error) {
           console.error('Error fetching dashboard stats:', error);
           toast.error('Failed to load dashboard statistics');
-          // Reset stats to zeros on error
-          setStats({
-            authorizedUsers: '0',
-            servers: '0',
-            transfers: '0',
-            verificationRate: '0%'
-          });
         } finally {
           setLoadingStats(false);
         }
@@ -89,12 +84,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     
     fetchStats();
     
-    // Set up a refresh interval (every 30 seconds)
+    // Set up a refresh interval (every 60 seconds instead of 30 to avoid rate limits)
     const interval = setInterval(() => {
       if (isConnected) {
         fetchStats();
       }
-    }, 30000);
+    }, 60000);
     
     return () => clearInterval(interval);
   }, [isConnected, executeCommand, fetchGuilds]);
@@ -106,20 +101,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   
   const handleRefreshStats = () => {
     toast.info("Refreshing dashboard statistics...");
-    setStats({
-      authorizedUsers: '0',
-      servers: '0',
-      transfers: '0',
-      verificationRate: '0%'
-    });
+    setLoadingStats(true);
+    
     const fetchStats = async () => {
       if (isConnected) {
         try {
-          // Same code as above for fetching stats
-          const guilds = await fetchGuilds();
-          const serverCount = guilds.length.toString();
-          setStats(prev => ({ ...prev, servers: serverCount }));
+          // Get servers count directly from fetchGuilds
+          try {
+            const guilds = await fetchGuilds();
+            const serverCount = guilds.length.toString();
+            setStats(prev => ({ ...prev, servers: serverCount }));
+          } catch (error) {
+            console.error('Error fetching servers:', error);
+            toast.error('Failed to fetch server count');
+          }
           
+          // Use commands for other stats with proper error handling
           try {
             const authResponse = await executeCommand('authorized');
             if (authResponse && authResponse.success) {
@@ -127,7 +124,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             }
           } catch (error) {
             console.error('Error fetching authorized users:', error);
-            setStats(prev => ({ ...prev, authorizedUsers: '0' }));
+            toast.error('Failed to fetch user count');
           }
           
           try {
@@ -147,14 +144,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             }
           } catch (error) {
             console.error('Error fetching transfer progress:', error);
-            setStats(prev => ({ ...prev, transfers: '0', verificationRate: '0%' }));
+            toast.error('Failed to fetch transfer statistics');
           }
         } catch (error) {
           console.error('Error fetching dashboard stats:', error);
           toast.error('Failed to load dashboard statistics');
+        } finally {
+          setLoadingStats(false);
         }
+      } else {
+        setLoadingStats(false);
+        toast.error("Bot is not connected. Please connect first.");
       }
     };
+    
     fetchStats();
   };
   

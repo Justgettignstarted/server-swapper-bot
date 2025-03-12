@@ -15,6 +15,43 @@ const DISCORD_API_BASE = 'https://discord.com/api/v10';
 let botConnectionStatus: BotConnectionStatus = 'disconnected';
 let botConnectionError: string | null = null;
 
+// Rate limit handling
+let rateLimitedEndpoints: Record<string, number> = {};
+
+/**
+ * Handles fetch requests with rate limit awareness
+ */
+const rateLimitAwareFetch = async (endpoint: string, options: RequestInit): Promise<Response> => {
+  // Check if we're currently rate limited for this endpoint
+  const now = Date.now();
+  if (rateLimitedEndpoints[endpoint] && rateLimitedEndpoints[endpoint] > now) {
+    const waitTime = Math.ceil((rateLimitedEndpoints[endpoint] - now) / 1000);
+    console.log(`Rate limited for ${endpoint}, waiting ${waitTime}s`);
+    
+    // Wait until rate limit expires (plus a small buffer)
+    await new Promise(resolve => setTimeout(resolve, (waitTime * 1000) + 100));
+  }
+  
+  const response = await fetch(endpoint, options);
+  
+  // Handle rate limiting
+  if (response.status === 429) {
+    const retryAfter = response.headers.get('retry-after');
+    const waitSeconds = retryAfter ? parseInt(retryAfter, 10) : 1;
+    
+    console.log(`Rate limited by Discord API for ${waitSeconds}s on ${endpoint}`);
+    
+    // Store when this endpoint's rate limit will expire
+    rateLimitedEndpoints[endpoint] = now + (waitSeconds * 1000);
+    
+    // Wait and retry
+    await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000 + 100));
+    return rateLimitAwareFetch(endpoint, options);
+  }
+  
+  return response;
+};
+
 /**
  * Check if the bot is online and operational
  */
@@ -29,7 +66,7 @@ export const checkBotStatus = async (token?: string): Promise<BotStatus> => {
     }
     
     // Test connection by fetching the bot's information
-    const response = await fetch(`${DISCORD_API_BASE}/users/@me`, {
+    const response = await rateLimitAwareFetch(`${DISCORD_API_BASE}/users/@me`, {
       headers: {
         'Authorization': `Bot ${token}`,
         'Content-Type': 'application/json'
@@ -65,7 +102,7 @@ export const checkBotStatus = async (token?: string): Promise<BotStatus> => {
  */
 export const fetchGuilds = async (token: string): Promise<DiscordGuild[]> => {
   try {
-    const response = await fetch(`${DISCORD_API_BASE}/users/@me/guilds`, {
+    const response = await rateLimitAwareFetch(`${DISCORD_API_BASE}/users/@me/guilds`, {
       headers: {
         'Authorization': `Bot ${token}`,
         'Content-Type': 'application/json'
@@ -89,7 +126,7 @@ export const fetchGuilds = async (token: string): Promise<DiscordGuild[]> => {
 export const fetchChannels = async (token: string, guildId: string): Promise<DiscordChannel[]> => {
   try {
     // First, try to fetch channels
-    const response = await fetch(`${DISCORD_API_BASE}/guilds/${guildId}/channels`, {
+    const response = await rateLimitAwareFetch(`${DISCORD_API_BASE}/guilds/${guildId}/channels`, {
       headers: {
         'Authorization': `Bot ${token}`,
         'Content-Type': 'application/json'
@@ -98,7 +135,7 @@ export const fetchChannels = async (token: string, guildId: string): Promise<Dis
     
     if (!response.ok) {
       // If that fails, try fetching via other endpoint that might have different permission requirements
-      const alternativeResponse = await fetch(`${DISCORD_API_BASE}/channels`, {
+      const alternativeResponse = await rateLimitAwareFetch(`${DISCORD_API_BASE}/channels`, {
         headers: {
           'Authorization': `Bot ${token}`,
           'Content-Type': 'application/json'
@@ -127,7 +164,7 @@ export const fetchChannels = async (token: string, guildId: string): Promise<Dis
  */
 export const fetchRoles = async (token: string, guildId: string): Promise<DiscordRole[]> => {
   try {
-    const response = await fetch(`${DISCORD_API_BASE}/guilds/${guildId}/roles`, {
+    const response = await rateLimitAwareFetch(`${DISCORD_API_BASE}/guilds/${guildId}/roles`, {
       headers: {
         'Authorization': `Bot ${token}`,
         'Content-Type': 'application/json'
@@ -153,7 +190,7 @@ export const fetchRoles = async (token: string, guildId: string): Promise<Discor
  */
 export const fetchMembers = async (token: string, guildId: string, limit: number = 100): Promise<DiscordMember[]> => {
   try {
-    const response = await fetch(`${DISCORD_API_BASE}/guilds/${guildId}/members?limit=${limit}`, {
+    const response = await rateLimitAwareFetch(`${DISCORD_API_BASE}/guilds/${guildId}/members?limit=${limit}`, {
       headers: {
         'Authorization': `Bot ${token}`,
         'Content-Type': 'application/json'
@@ -161,7 +198,7 @@ export const fetchMembers = async (token: string, guildId: string, limit: number
     });
     
     if (!response.ok) {
-      console.warn(`Failed to fetch members: ${response.statusText}. Your bot may need additional privileged intents.`);
+      console.warn(`Failed to fetch members: ${response.statusText}. Your bot may need privileged intents.`);
       // Return empty array instead of throwing
       return [];
     }
