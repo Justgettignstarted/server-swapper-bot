@@ -3,7 +3,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { AtSign, Diamond } from 'lucide-react';
+import { AtSign, Diamond, Crown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface NavBarProps {
@@ -12,6 +12,7 @@ interface NavBarProps {
   onLogout?: () => void;
   username?: string;
   isPremium?: boolean;
+  premiumTier?: string;
 }
 
 export const NavBar: React.FC<NavBarProps> = ({
@@ -19,8 +20,32 @@ export const NavBar: React.FC<NavBarProps> = ({
   isAuthorized = false,
   onLogout,
   username,
-  isPremium = false
+  isPremium = false,
+  premiumTier = 'Pro'
 }) => {
+  // Determine badge appearance based on tier
+  const getBadgeStyles = () => {
+    switch (premiumTier) {
+      case 'Enterprise':
+        return {
+          bg: 'bg-amber-500/10',
+          text: 'text-amber-500',
+          border: 'border-amber-500/20',
+          icon: <Crown className="h-3 w-3" />
+        };
+      case 'Pro':
+      default:
+        return {
+          bg: 'bg-purple-500/10',
+          text: 'text-purple-500',
+          border: 'border-purple-500/20',
+          icon: <Diamond className="h-3 w-3" />
+        };
+    }
+  };
+
+  const badgeStyles = getBadgeStyles();
+
   return (
     <motion.div
       initial={{ y: -20, opacity: 0 }}
@@ -49,10 +74,10 @@ export const NavBar: React.FC<NavBarProps> = ({
             {isPremium && (
               <Badge 
                 variant="outline" 
-                className="ml-1 bg-purple-500/10 text-purple-500 border-purple-500/20 px-2 py-0 flex items-center gap-1"
+                className={`ml-1 ${badgeStyles.bg} ${badgeStyles.text} ${badgeStyles.border} px-2 py-0 flex items-center gap-1`}
               >
-                <Diamond className="h-3 w-3" />
-                <span className="text-xs">PRO</span>
+                {badgeStyles.icon}
+                <span className="text-xs">{premiumTier?.toUpperCase()}</span>
               </Badge>
             )}
           </div>

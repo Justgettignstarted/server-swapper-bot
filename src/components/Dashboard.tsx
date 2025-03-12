@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavBar } from './NavBar';
 import { BotSetup } from './BotSetup';
 import { DocumentationModal } from './DocumentationModal';
@@ -11,6 +10,7 @@ import { DashboardStats } from './dashboard/DashboardStats';
 import { DashboardTabs } from './dashboard/DashboardTabs';
 import { PremiumSection } from './PremiumSection';
 import { SubscriptionStatus } from './premium/SubscriptionStatus';
+import { checkPremiumStatus, getPremiumTier } from './premium/PaymentService';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -29,6 +29,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const { stats, loadingStats, refreshStats } = useDashboardStats();
   const [isDocOpen, setIsDocOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [currentTier, setCurrentTier] = useState<string | null>(getPremiumTier());
+  
+  useEffect(() => {
+    const checkStatus = () => {
+      const status = checkPremiumStatus();
+      const tier = getPremiumTier();
+      if (status && tier && onUpgrade) {
+        onUpgrade(status, tier);
+      }
+      setCurrentTier(tier);
+    };
+    
+    checkStatus();
+    
+    const handleStorageChange = () => {
+      checkStatus();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [onUpgrade]);
   
   return (
     <div className="min-h-screen p-6">
@@ -38,6 +59,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           onLogout={onLogout} 
           username={username} 
           isPremium={isPremium} 
+          premiumTier={currentTier || undefined}
         />
         
         <div className="flex space-x-4 mb-6">
@@ -91,7 +113,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
         )}
         
         {activeTab === 'premium' && (
-          <PremiumSection onUpgrade={onUpgrade} />
+          <PremiumSection 
+            onUpgrade={(isPremiumStatus, tier) => {
+              if (onUpgrade) {
+                onUpgrade(isPremiumStatus, tier);
+              }
+              setCurrentTier(tier);
+            }} 
+          />
         )}
       </div>
     </div>

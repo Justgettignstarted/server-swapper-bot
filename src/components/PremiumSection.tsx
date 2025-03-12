@@ -25,6 +25,8 @@ export const PremiumSection: React.FC<PremiumSectionProps> = ({ onUpgrade }) => 
     if (checkPremiumStatus()) {
       const tier = getPremiumTier() || "Pro";
       setCurrentTier(tier);
+    } else {
+      setCurrentTier("Basic");
     }
   }, []);
 
@@ -56,6 +58,9 @@ export const PremiumSection: React.FC<PremiumSectionProps> = ({ onUpgrade }) => 
         if (onUpgrade) {
           onUpgrade(true, selectedTier);
         }
+        
+        // Trigger a storage event to notify other tabs
+        window.dispatchEvent(new Event('storage'));
       }
       
       setUpgradeDialogOpen(false);

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Hero } from '@/components/Hero';
 import { Dashboard } from '@/components/Dashboard';
@@ -8,6 +9,7 @@ const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState<string | undefined>(undefined);
   const [isPremium, setIsPremium] = useState(false);
+  const [premiumTier, setPremiumTier] = useState<string | null>(null);
 
   useEffect(() => {
     const storedUsername = localStorage.getItem('username');
@@ -16,8 +18,13 @@ const Index = () => {
       setIsAuthenticated(true);
     }
     
-    if (checkPremiumStatus()) {
-      setIsPremium(true);
+    // Get premium status and tier from localStorage
+    const premiumStatus = checkPremiumStatus();
+    setIsPremium(premiumStatus);
+    
+    if (premiumStatus) {
+      const tier = getPremiumTier();
+      setPremiumTier(tier);
     }
   }, []);
 
@@ -28,8 +35,14 @@ const Index = () => {
     
     localStorage.setItem('username', newUsername);
     
+    // Check premium status on login
     const isPremiumUser = checkPremiumStatus();
     setIsPremium(isPremiumUser);
+    
+    if (isPremiumUser) {
+      const tier = getPremiumTier();
+      setPremiumTier(tier);
+    }
   };
 
   const handleLogout = () => {
@@ -40,7 +53,9 @@ const Index = () => {
   };
 
   const handleUpgrade = (isPremiumStatus: boolean, tier: string) => {
+    console.log(`Updating premium status: ${isPremiumStatus}, tier: ${tier}`);
     setIsPremium(isPremiumStatus);
+    setPremiumTier(tier);
   };
 
   return (
