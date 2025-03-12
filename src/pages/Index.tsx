@@ -5,6 +5,7 @@ import { Dashboard } from '@/components/Dashboard';
 import { AnimatePresence, motion } from 'framer-motion';
 import { checkPremiumStatus, getPremiumTier } from '@/components/premium/PaymentService';
 import { toast } from 'sonner';
+import { getDiscordUser, clearDiscordAuth } from '@/utils/auth/discordAuth';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -13,12 +14,17 @@ const Index = () => {
   const [premiumTier, setPremiumTier] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get username from localStorage (would come from Discord OAuth in production)
-    const storedUsername = localStorage.getItem('username');
-    if (storedUsername) {
-      setUsername(storedUsername);
+    // Get Discord user from localStorage
+    const discordUser = getDiscordUser();
+    if (discordUser) {
+      // Format username with discriminator if available
+      const formattedUsername = discordUser.discriminator && discordUser.discriminator !== '0' 
+        ? `${discordUser.username}#${discordUser.discriminator}` 
+        : discordUser.username;
+      
+      setUsername(formattedUsername);
       setIsAuthenticated(true);
-      toast.success(`Welcome back, ${storedUsername.split('#')[0]}!`);
+      toast.success(`Welcome back, ${discordUser.username}!`);
     }
     
     // Get premium status and tier from localStorage
@@ -32,16 +38,20 @@ const Index = () => {
   }, []);
 
   const handleLogin = () => {
-    // In a real app, this would be handled by the Discord OAuth callback
-    // Here we're relying on the DiscordLoginButton component to set the username
-    const storedUsername = localStorage.getItem('username');
-    if (storedUsername) {
-      setUsername(storedUsername);
+    // This function now only handles post-authentication flow
+    // The actual redirect to Discord happens in the DiscordLoginButton component
+    const discordUser = getDiscordUser();
+    if (discordUser) {
+      // Format username with discriminator if available
+      const formattedUsername = discordUser.discriminator && discordUser.discriminator !== '0' 
+        ? `${discordUser.username}#${discordUser.discriminator}` 
+        : discordUser.username;
+      
+      setUsername(formattedUsername);
       setIsAuthenticated(true);
       
-      // Welcome toast with just the username part (without discriminator)
-      const displayName = storedUsername.split('#')[0];
-      toast.success(`Welcome, ${displayName}!`);
+      // Welcome toast with the username
+      toast.success(`Welcome, ${discordUser.username}!`);
     }
     
     // Check premium status on login
@@ -58,7 +68,8 @@ const Index = () => {
     setIsAuthenticated(false);
     setUsername(undefined);
     
-    localStorage.removeItem('username');
+    // Clear Discord auth data
+    clearDiscordAuth();
     toast.info('You have been logged out');
   };
 
