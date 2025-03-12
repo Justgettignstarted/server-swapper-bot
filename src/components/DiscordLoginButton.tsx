@@ -28,20 +28,24 @@ export const DiscordLoginButton: React.FC<DiscordLoginButtonProps> = ({
       // Get the client ID from environment variables or use the default
       const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID || DEFAULT_DISCORD_CLIENT_ID;
       
-      // Important: This must match exactly what you registered in Discord Developer Portal
-      // We'll use the exact URL format without relying on window.location.origin
-      // This should be registered in Discord developer portal OAuth2 redirect URIs
+      // Create a fixed redirect URI format that will match what you've registered in Discord
+      // For Lovable projects, the URL will be something like:
+      // https://your-project-id.lovableproject.com/auth/callback
+      
+      // For local development, it will be:
+      // http://localhost:8080/auth/callback (note the port is 8080 for Vite in this project)
       let redirectUri;
       
-      // Check if we're in development or production environment
       if (window.location.hostname === 'localhost') {
-        redirectUri = `http://localhost:${window.location.port}/auth/callback`;
+        // Use port 8080 for local development with Vite
+        redirectUri = 'http://localhost:8080/auth/callback';
       } else {
-        // For production Lovable environment or any other hosted environment
+        // For production environments
         redirectUri = `${window.location.protocol}//${window.location.host}/auth/callback`;
       }
       
-      console.log("Using redirect URI:", redirectUri);
+      // Log the redirect URI to help with debugging
+      console.log("Discord OAuth Redirect URI:", redirectUri);
       
       const encodedRedirectUri = encodeURIComponent(redirectUri);
       const scope = encodeURIComponent('identify email guilds');
