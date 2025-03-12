@@ -63,7 +63,7 @@ export const NavBar: React.FC<NavBarProps> = ({
             variant="outline" 
             size="sm" 
             onClick={onLogout}
-            className="border-discord-gray/30 hover:bg-discord-darker hover:text-white"
+            className="border-discord-darker/30 hover:bg-discord-darker hover:text-white"
           >
             Logout
           </Button>
