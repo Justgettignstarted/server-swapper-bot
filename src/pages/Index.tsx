@@ -6,13 +6,17 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState<string | undefined>(undefined);
 
   const handleLogin = () => {
+    // In a real app, this would come from Discord OAuth
+    setUsername("DiscordUser" + Math.floor(Math.random() * 10000));
     setIsAuthenticated(true);
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+    setUsername(undefined);
   };
 
   return (
@@ -35,7 +39,7 @@ const Index = () => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <Dashboard onLogout={handleLogout} />
+          <Dashboard onLogout={handleLogout} username={username} />
         </motion.div>
       )}
     </AnimatePresence>

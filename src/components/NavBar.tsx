@@ -3,17 +3,20 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { AtSign } from 'lucide-react';
 
 interface NavBarProps {
   className?: string;
   isAuthorized?: boolean;
   onLogout?: () => void;
+  username?: string;
 }
 
 export const NavBar: React.FC<NavBarProps> = ({
   className,
   isAuthorized = false,
-  onLogout
+  onLogout,
+  username
 }) => {
   return (
     <motion.div
@@ -34,16 +37,25 @@ export const NavBar: React.FC<NavBarProps> = ({
         <span className="text-xl font-semibold">Discord Server Swapper</span>
       </div>
       
-      {isAuthorized && onLogout && (
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onLogout}
-          className="border-discord-gray/30 hover:bg-discord-darker hover:text-white"
-        >
-          Logout
-        </Button>
-      )}
+      <div className="flex items-center gap-4">
+        {isAuthorized && username && (
+          <div className="flex items-center gap-2 bg-discord-darker/30 px-3 py-1.5 rounded-md">
+            <AtSign className="h-4 w-4 text-discord-blurple" />
+            <span className="text-sm font-medium">{username}</span>
+          </div>
+        )}
+        
+        {isAuthorized && onLogout && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onLogout}
+            className="border-discord-gray/30 hover:bg-discord-darker hover:text-white"
+          >
+            Logout
+          </Button>
+        )}
+      </div>
     </motion.div>
   );
 };
