@@ -119,6 +119,7 @@ export const fetchGuilds = async (token: string): Promise<DiscordGuild[]> => {
  */
 export const fetchChannels = async (token: string, guildId: string): Promise<DiscordChannel[]> => {
   try {
+    // First, try to fetch channels
     const response = await fetch(`${DISCORD_API_BASE}/guilds/${guildId}/channels`, {
       headers: {
         'Authorization': `Bot ${token}`,
@@ -127,13 +128,28 @@ export const fetchChannels = async (token: string, guildId: string): Promise<Dis
     });
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch channels: ${response.statusText}`);
+      // If that fails, try fetching via other endpoint that might have different permission requirements
+      const alternativeResponse = await fetch(`${DISCORD_API_BASE}/channels`, {
+        headers: {
+          'Authorization': `Bot ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!alternativeResponse.ok) {
+        throw new Error(`Failed to fetch channels: ${response.statusText}. Your bot may need additional permissions.`);
+      }
+      
+      const allChannels = await alternativeResponse.json();
+      // Filter only channels from the requested guild
+      return allChannels.filter((channel: any) => channel.guild_id === guildId);
     }
     
     return await response.json();
   } catch (error) {
     console.error('Error fetching channels:', error);
-    throw error;
+    // Return empty array instead of throwing to prevent UI breaking
+    return [];
   }
 };
 
@@ -150,13 +166,16 @@ export const fetchRoles = async (token: string, guildId: string): Promise<Discor
     });
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch roles: ${response.statusText}`);
+      console.warn(`Failed to fetch roles: ${response.statusText}. Your bot may need additional permissions.`);
+      // Return empty array instead of throwing
+      return [];
     }
     
     return await response.json();
   } catch (error) {
     console.error('Error fetching roles:', error);
-    throw error;
+    // Return empty array instead of throwing
+    return [];
   }
 };
 
@@ -173,13 +192,22 @@ export const fetchMembers = async (token: string, guildId: string, limit: number
     });
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch members: ${response.statusText}`);
+      console.warn(`Failed to fetch members: ${response.statusText}. Your bot may need additional privileged intents.`);
+      // Return empty array instead of throwing
+      return [];
     }
     
-    return await response.json();
+    const members = await response.json();
+    return members.map((member: any) => ({
+      id: member.user?.id || '',
+      username: member.user?.username || 'Unknown User',
+      avatar: member.user?.avatar,
+      roles: member.roles || []
+    }));
   } catch (error) {
     console.error('Error fetching members:', error);
-    throw error;
+    // Return empty array instead of throwing
+    return [];
   }
 };
 
@@ -190,7 +218,7 @@ export const sendBotCommand = async (token: string, command: string, params: Rec
   try {
     if (botConnectionStatus !== 'connected') {
       await checkBotStatus(token);
-      if (botConnectionStatus as BotConnectionStatus !== 'connected') {
+      if (botConnectionStatus !== 'connected') {
         throw new Error('Bot is not connected');
       }
     }

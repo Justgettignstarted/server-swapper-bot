@@ -6,7 +6,7 @@ import { useBot } from '@/context/BotContext';
 import { toast } from 'sonner';
 
 export const CommandsPanel = () => {
-  const { executeCommand, isConnected } = useBot();
+  const { executeCommand, isConnected, fetchGuilds } = useBot();
   
   const commands = [
     {
@@ -94,12 +94,45 @@ export const CommandsPanel = () => {
         case 'getGuilds':
           response = await executeCommand('getGuilds');
           toast.success(`Found ${response.guilds.length} servers`);
+          // Display server details in console for debugging
+          console.log('Available servers:', response.guilds);
+          break;
+        case 'getChannels':
+          const guilds = await fetchGuilds();
+          if (guilds.length > 0) {
+            response = await executeCommand('getChannels', { guildId: guilds[0].id });
+            toast.success(`Found ${response.channels.length} channels in server ${guilds[0].name}`);
+            console.log('Channels:', response.channels);
+          } else {
+            toast.error('No servers available');
+          }
+          break;
+        case 'getRoles':
+          const guildList = await fetchGuilds();
+          if (guildList.length > 0) {
+            response = await executeCommand('getRoles', { guildId: guildList[0].id });
+            toast.success(`Found ${response.roles.length} roles in server ${guildList[0].name}`);
+            console.log('Roles:', response.roles);
+          } else {
+            toast.error('No servers available');
+          }
+          break;
+        case 'getMembers':
+          const serverList = await fetchGuilds();
+          if (serverList.length > 0) {
+            response = await executeCommand('getMembers', { guildId: serverList[0].id, limit: 100 });
+            toast.success(`Found ${response.members.length} members in server ${serverList[0].name}`);
+            console.log('Members:', response.members);
+          } else {
+            toast.error('No servers available');
+          }
           break;
         default:
           toast.info(`For ${command}, please provide the required parameters`);
       }
     } catch (error) {
-      toast.error("Command execution failed");
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Command execution failed: ${errorMessage}`);
     }
   };
 
