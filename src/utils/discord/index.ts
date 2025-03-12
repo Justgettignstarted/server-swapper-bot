@@ -18,16 +18,18 @@ import {
 
 import { sendBotCommand } from './commands';
 
-// Re-export all the types and functions
-export {
-  // Types
+// Re-export all the types with 'export type' syntax
+export type { 
   BotConnectionStatus,
   BotStatus,
   DiscordGuild,
   DiscordChannel,
   DiscordRole,
-  DiscordMember,
-  
+  DiscordMember
+};
+
+// Re-export functions as-is
+export {
   // API functions
   checkBotStatus,
   fetchGuilds,
