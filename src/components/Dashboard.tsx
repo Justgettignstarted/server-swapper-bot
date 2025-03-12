@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { CommandsPanel } from './CommandsPanel';
 import { ServerTransferSection } from './ServerTransferSection';
@@ -6,8 +5,9 @@ import { StatisticsCard } from './StatisticsCard';
 import { NavBar } from './NavBar';
 import { BotSetup } from './BotSetup';
 import { ServerInfoPanel } from './ServerInfoPanel';
+import { DocumentationModal } from './DocumentationModal';
 import { motion } from 'framer-motion';
-import { Users, Server, RotateCw, ShieldCheck } from 'lucide-react';
+import { Users, Server, RotateCw, ShieldCheck, HelpCircle } from 'lucide-react';
 import { useBot } from '@/context/BotContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -25,25 +25,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     transfers: '0',
     verificationRate: '0%'
   });
+  const [isDocOpen, setIsDocOpen] = useState(false);
   
-  // Fetch stats when connected
   useEffect(() => {
     const fetchStats = async () => {
       if (isConnected) {
         try {
-          // Fetch authorized users count
           const authResponse = await executeCommand('authorized');
           if (authResponse.success) {
             setStats(prev => ({ ...prev, authorizedUsers: authResponse.count.toString() }));
           }
           
-          // Fetch guild count
           const guildsResponse = await executeCommand('getGuilds');
           if (guildsResponse.success) {
             setStats(prev => ({ ...prev, servers: guildsResponse.guilds.length.toString() }));
           }
           
-          // Fetch transfer progress
           const progressResponse = await executeCommand('progress');
           if (progressResponse.success) {
             setStats(prev => ({ 
@@ -88,14 +85,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               }
             </span>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefreshConnection}
-            disabled={connecting}
-          >
-            {connecting ? 'Checking...' : 'Refresh Connection'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsDocOpen(true)}
+              className="flex items-center gap-1"
+            >
+              <HelpCircle className="h-4 w-4" />
+              Documentation
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefreshConnection}
+              disabled={connecting}
+            >
+              {connecting ? 'Checking...' : 'Refresh Connection'}
+            </Button>
+          </div>
         </div>
         
         {!isConnected && (
@@ -166,8 +174,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             </TabsContent>
           </Tabs>
         )}
+        
+        <DocumentationModal 
+          open={isDocOpen} 
+          onOpenChange={setIsDocOpen} 
+        />
       </div>
     </div>
   );
 };
-
