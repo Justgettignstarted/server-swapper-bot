@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -10,10 +10,25 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Zap, Shield, Users, BarChart } from "lucide-react";
+import { Crown, Zap, Shield, Users, BarChart, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { useBot } from "@/context/BotContext";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export const PremiumSection: React.FC = () => {
+  const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { executeCommand } = useBot();
+
   const tiers = [
     {
       name: "Basic",
@@ -64,6 +79,34 @@ export const PremiumSection: React.FC = () => {
       highlight: false
     }
   ];
+
+  const handleUpgradeClick = (tierName: string) => {
+    setSelectedTier(tierName);
+    setUpgradeDialogOpen(true);
+  };
+
+  const handleConfirmUpgrade = async () => {
+    if (!selectedTier) return;
+    
+    setIsProcessing(true);
+    try {
+      // Simulate API call to upgrade subscription
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // In a real app, we would call the bot's API to upgrade the subscription
+      // For now, we'll just show a success message
+      toast.success(`Successfully upgraded to ${selectedTier} plan!`, {
+        description: "Your new benefits are now available",
+        icon: <CheckCircle className="h-4 w-4 text-green-500" />
+      });
+      
+      setUpgradeDialogOpen(false);
+    } catch (error) {
+      toast.error("Failed to upgrade subscription. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -144,6 +187,7 @@ export const PremiumSection: React.FC = () => {
                   variant={tier.buttonVariant} 
                   className={`w-full ${tier.isCurrent ? 'cursor-default' : ''}`}
                   disabled={tier.isCurrent}
+                  onClick={() => !tier.isCurrent && handleUpgradeClick(tier.name)}
                 >
                   {tier.buttonText}
                 </Button>
@@ -152,6 +196,51 @@ export const PremiumSection: React.FC = () => {
           </motion.div>
         ))}
       </motion.div>
+
+      <Dialog open={upgradeDialogOpen} onOpenChange={setUpgradeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upgrade to {selectedTier} Plan</DialogTitle>
+            <DialogDescription>
+              You're about to upgrade your subscription. This will be charged to your payment method on file.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <h3 className="font-semibold mb-2">Plan Details:</h3>
+            {selectedTier === "Pro" && (
+              <div className="space-y-2">
+                <p>• <strong>Price:</strong> $9.99/month</p>
+                <p>• <strong>Features:</strong> Up to 10 server connections, advanced verification, priority support</p>
+                <p>• <strong>Billing:</strong> You'll be charged immediately and then monthly</p>
+              </div>
+            )}
+            {selectedTier === "Enterprise" && (
+              <div className="space-y-2">
+                <p>• <strong>Price:</strong> $24.99/month</p>
+                <p>• <strong>Features:</strong> Unlimited servers, mass transfers, developer API access</p>
+                <p>• <strong>Billing:</strong> You'll be charged immediately and then monthly</p>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setUpgradeDialogOpen(false)}
+              disabled={isProcessing}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmUpgrade}
+              disabled={isProcessing}
+            >
+              {isProcessing ? "Processing..." : "Confirm Upgrade"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
