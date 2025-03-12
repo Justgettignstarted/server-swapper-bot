@@ -12,9 +12,10 @@ import { DashboardTabs } from './dashboard/DashboardTabs';
 
 interface DashboardProps {
   onLogout: () => void;
+  username?: string;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ onLogout, username }) => {
   const { isConnected } = useBot();
   const { stats, loadingStats, refreshStats } = useDashboardStats();
   const [isDocOpen, setIsDocOpen] = useState(false);
@@ -22,7 +23,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        <NavBar isAuthorized={true} onLogout={onLogout} />
+        <NavBar isAuthorized={true} onLogout={onLogout} username={username} />
         
         <DashboardHeader 
           isDocOpen={isDocOpen} 
