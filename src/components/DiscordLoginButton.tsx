@@ -25,7 +25,11 @@ export const DiscordLoginButton: React.FC<DiscordLoginButtonProps> = ({
     
     // Get the client ID from environment variables or use the default
     const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID || DEFAULT_DISCORD_CLIENT_ID;
+    
+    // Important: This must match exactly what you registered in Discord Developer Portal
+    // Use window.location.origin to dynamically get the base URL
     const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
+    
     const scope = encodeURIComponent('identify email guilds');
     const state = crypto.randomUUID(); // Generate a random state for security
     
