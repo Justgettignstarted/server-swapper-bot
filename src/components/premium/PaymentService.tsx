@@ -19,6 +19,12 @@ export const processPayment = async (tierName: string, priceId: string | null) =
       description: "Your payment was processed successfully. Your new benefits are now available.",
       icon: <CheckCircle className="h-4 w-4 text-green-500" />
     });
+    
+    // Store premium status in localStorage for persistence
+    localStorage.setItem('isPremium', 'true');
+    localStorage.setItem('premiumTier', tierName);
+    
+    // Return true to indicate success and trigger UI updates
     return true;
   } else {
     toast.error("Payment failed", {
@@ -26,4 +32,14 @@ export const processPayment = async (tierName: string, priceId: string | null) =
     });
     return false;
   }
+};
+
+// Function to check if user is premium
+export const checkPremiumStatus = () => {
+  return localStorage.getItem('isPremium') === 'true';
+};
+
+// Function to get the current premium tier
+export const getPremiumTier = () => {
+  return localStorage.getItem('premiumTier') || null;
 };
