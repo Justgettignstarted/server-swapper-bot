@@ -7,63 +7,81 @@ This guide explains how our Discord bot integration works and what you need to s
 
 The Discord bot integration allows you to:
 - Connect your Discord bot to this application
-- Manage user transfers between Discord servers
+- Monitor and manage your Discord servers
 - Execute various commands to interact with Discord servers
-- View statistics about authorized users and transfers
+- View statistics about servers, users, and activities
 
 ## Requirements
 
 To use this integration, you'll need:
 
 1. **A Discord Bot Token**
-   - You must register an application in the [Discord Developer Portal](https://discord.com/developers/applications)
+   - Register an application in the [Discord Developer Portal](https://discord.com/developers/applications)
    - Create a bot for your application
    - Generate and copy your bot token
-   - Give the bot proper permissions (see below)
+   - Enable the required intents (see below)
 
-2. **Required Bot Permissions**
-   - `bot` scope
-   - `applications.commands` scope
-   - `Read Messages/View Channels` permission
-   - `Send Messages` permission
-   - `Manage Roles` permission (for role assignment)
-   - `Create Instant Invite` permission
-   - Server Members Intent (in Bot settings)
-   - Message Content Intent (in Bot settings)
+2. **Required Bot Permissions and Intents**
+   - **OAuth2 Scopes:**
+     - `bot` scope
+     - `applications.commands` scope
+   - **Bot Permissions:**
+     - `Read Messages/View Channels`
+     - `Send Messages`
+     - `Manage Roles` (for role assignment)
+     - `Create Instant Invite`
+   - **Required Intents** (in Bot settings):
+     - Server Members Intent (crucial for member operations)
+     - Message Content Intent (for command processing)
+     - Presence Intent (optional, for enhanced user status monitoring)
 
-3. **Bot Must Be In Servers**
-   - Your bot must be invited to the Discord servers you want to manage
-   - Use the OAuth2 URL Generator in the Discord Developer Portal to create an invite link with the necessary permissions
+3. **Bot Must Be In Your Servers**
+   - Your bot must be invited to any Discord servers you want to manage
+   - Use the OAuth2 URL Generator in the Discord Developer Portal with the necessary permissions
+   - The invitation link should include all the required scopes and permissions
 
-## How It Works
+## Connection Process
 
-### Bot Connection
+### Setting Up Your Bot
+
+1. Go to the [Discord Developer Portal](https://discord.com/developers/applications)
+2. Click "New Application" and provide a name
+3. Navigate to the "Bot" tab and click "Add Bot"
+4. Under the "Privileged Gateway Intents" section, enable:
+   - Server Members Intent
+   - Message Content Intent
+5. Click "Reset Token" to generate a new token (or copy your existing one)
+6. Save this token securely - you'll need it for this application
+
+### Connecting Your Bot
 
 1. Enter your Discord bot token in the Bot Connection Setup panel
 2. The application securely stores this token in your browser's localStorage
-3. The token is used to authenticate API requests to Discord
-4. The application periodically checks the bot's connection status
+3. Click "Connect Bot" to establish the connection
+4. The application will verify the connection and show the bot's status
+5. Once connected, you'll see "Online" status indicator and server statistics
 
-### Dashboard Statistics
+## Dashboard Statistics
 
-When connected, the dashboard displays:
-- **Authorized Users**: Number of users authorized for transfers
-- **Servers**: Number of Discord servers the bot is a member of 
-- **Transfers Completed**: Number of successful user transfers
-- **Verification Rate**: Percentage of successful transfers out of total attempts
+The dashboard displays real-time statistics pulled directly from Discord's API:
 
-Note: For this demo application, some statistics may be simulated. In a production environment, these would be fetched from your actual Discord bot database.
+- **Authorized Users**: The total number of users across your Discord servers
+- **Servers**: The number of Discord servers your bot is a member of
+- **Transfers Completed**: Number of successful user transfers (if applicable)
+- **Verification Rate**: Success rate of verification processes (if applicable)
 
-### Available Commands
+These statistics are refreshed automatically and can be manually updated using the "Refresh Stats" button.
 
-The application provides a UI for these commands:
+## Command Reference
+
+This application provides a user interface for interacting with Discord through these commands:
 
 | Command | Description | Parameters |
 |---------|-------------|------------|
 | `-test` | Checks if bot is online | None |
 | `-authorized` | Gets the number of authorized users | None |
 | `-progress` | Shows transfer progress statistics | None |
-| `-join` | Joins users to a server | `<server_id> <amount>` |
+| `-join` | Facilitates user joining process | `<server_id> <amount>` |
 | `-refreshtokens` | Refreshes user tokens | None |
 | `-set` | Sets role for verified users | `<role_id> <server_id>` |
 | `-getGuilds` | Lists all available servers | None |
@@ -71,65 +89,83 @@ The application provides a UI for these commands:
 | `-getRoles` | Lists all roles in a server | `<guild_id>` |
 | `-getMembers` | Lists members in a server | `<guild_id> <limit>` |
 
-### User Transfer Process
+## Server Management Features
 
-1. Navigate to the User Transfer tab
+### Server Information Panel
+
+The Server Information panel allows you to:
+
+1. View a list of all servers (guilds) your bot is connected to
+2. See detailed information about each server:
+   - Channels (text, voice, announcement, etc.)
+   - Roles and their permissions
+   - Member counts and details (limited by Discord API constraints)
+
+To use this panel:
+1. Navigate to the "Server Information" tab
+2. Select a server from the dropdown
+3. Choose what information you want to view (channels, roles, members)
+4. The information will be displayed in a structured format
+
+### User Management Functions
+
+For managing users across servers:
+
+1. Navigate to the "User Transfer" tab
 2. Enter the destination server ID
-3. Specify the number of users to transfer
-4. Click "Start Transfer"
-5. The application will initiate the transfer and display progress
-6. Once complete, a success notification will appear
+3. Specify parameters for the operation
+4. Monitor progress in the dashboard
 
-## Security Considerations
+## Technical Implementation Details
 
-- Your bot token provides access to your bot - never share it publicly
-- The token is stored only in your browser's localStorage
-- The application makes direct API calls to Discord without sending your token to our servers
-- Clear the token when no longer needed by clicking "Clear Token"
+### API Rate Limits
+
+Discord imposes strict rate limits on API requests:
+
+- The application includes built-in rate limit handling
+- If you encounter "Rate limited" messages, the system will automatically retry
+- For large servers, some operations may take longer due to these limits
+
+### Security Considerations
+
+- Your bot token provides full access to your bot - treat it like a password
+- This application stores your token only in your browser's localStorage
+- The token is used only for direct API calls to Discord
+- Clear the token when finished by clicking "Clear Token"
+- No server-side storage of your token occurs
+
+### Error Handling
+
+Common error scenarios and solutions:
+
+1. **"Bot is offline" or connection failures:**
+   - Verify your token is correct and not expired
+   - Check if the bot application is enabled in Discord Developer Portal
+   - Ensure all required intents are enabled
+
+2. **"Failed to fetch" errors:**
+   - These typically indicate permission issues
+   - Verify your bot has the necessary permissions in the servers
+   - Some operations require specific intents to be enabled
+
+3. **Limited or no members shown:**
+   - This is normal for larger servers due to Discord API limitations
+   - The Server Members Intent must be enabled
+   - Discord limits how many members can be fetched at once
+
+## Additional Resources
+
+- [Discord Developer Documentation](https://discord.com/developers/docs)
+- [Discord Bot Permissions Calculator](https://discordapi.com/permissions.html)
+- [Discord API Rate Limits](https://discord.com/developers/docs/topics/rate-limits)
 
 ## Troubleshooting
 
 If you encounter issues:
 
-1. **Bot shows as "Offline"**
-   - Verify your token is correct
-   - Ensure the bot application is not disabled in Discord Developer Portal
-   - Check that the bot has the required permissions and intents
-
-2. **Cannot fetch servers**
-   - Ensure the bot has the Server Members Intent enabled
-   - Check that the bot is actually a member of the servers
-
-3. **Cannot transfer users**
-   - Verify the bot has proper permissions in both source and destination servers
-   - Ensure the destination server ID is correct
-   - Check that users have authorized the transfer
-
-4. **Role assignment fails**
-   - Ensure the bot's role is higher in the hierarchy than the role it's trying to assign
-   - Verify that the role ID is correct
-
-5. **Statistics not displaying correctly**
-   - Click the "Refresh Stats" button in the dashboard
-   - Check your bot's connection status
-   - Verify that the bot has access to the required data
-
-## Demo Mode Notice
-
-This application includes a demonstration mode that simulates certain aspects of a Discord bot integration. In this mode:
-
-- The server count reflects your bot's actual servers
-- Other statistics (authorized users, transfers, etc.) are simulated for demonstration purposes
-- Commands execute in a simulated environment
-- No actual Discord users are affected
-
-## Technical Implementation
-
-This integration consists of the following main components:
-
-1. **BotContext**: React context for managing bot state and operations
-2. **API Module**: Handles direct communication with Discord's API
-3. **Commands Module**: Processes and executes bot commands
-4. **UI Components**: Dashboard, server info panel, and transfer section
-
-For developers extending this functionality, refer to the Discord API documentation and our codebase for implementation details.
+1. Check the bot's connection status at the top of the dashboard
+2. Use the "Refresh Connection" button to re-establish the connection
+3. Try the `-test` command to verify bot functionality
+4. Check browser console logs for detailed error messages
+5. Ensure your bot has the necessary permissions in your Discord servers
+6. Verify that all required intents are enabled in the Discord Developer Portal
