@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -10,10 +9,9 @@ interface DiscordLoginButtonProps {
   onLogin: () => void;
 }
 
-// You should replace this with your actual Discord Client ID
-// by creating a .env file in the root of your project with:
-// VITE_DISCORD_CLIENT_ID=your_discord_client_id_here
-const DEFAULT_DISCORD_CLIENT_ID = '123456789012345678';
+// Discord Client ID from environment variable
+// Value: 1349215809288929290
+const DEFAULT_DISCORD_CLIENT_ID = '1349215809288929290';
 
 export const DiscordLoginButton: React.FC<DiscordLoginButtonProps> = ({
   className,
