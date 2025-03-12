@@ -9,8 +9,9 @@ interface DiscordLoginButtonProps {
   onLogin: () => void;
 }
 
-// You can replace this with your actual Discord Client ID
-// This is a fallback if the environment variable is not set
+// You should replace this with your actual Discord Client ID
+// by creating a .env file in the root of your project with:
+// VITE_DISCORD_CLIENT_ID=your_discord_client_id_here
 const DEFAULT_DISCORD_CLIENT_ID = '123456789012345678';
 
 export const DiscordLoginButton: React.FC<DiscordLoginButtonProps> = ({
