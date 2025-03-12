@@ -181,3 +181,19 @@ If you encounter issues:
 4. Check browser console logs for detailed error messages
 5. Ensure your bot has the necessary permissions in your Discord servers
 6. Verify that all required intents are enabled in the Discord Developer Portal
+
+## Support
+
+If you need assistance with your Discord bot integration:
+
+- Email us at: support@discordbot-manager.com
+- Join our support Discord server: [discord.gg/botmanager](https://discord.gg/botmanager)
+- Live chat support available Monday-Friday, 9am-5pm EST
+- Premium support available for enterprise customers
+
+## Credits
+
+This Discord Bot Manager was created by DiscordTools Inc.
+© 2024 DiscordTools Inc. All rights reserved.
+Version 2.0.3
+

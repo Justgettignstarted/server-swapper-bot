@@ -3,7 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ExternalLink, Info, Server, Shield, Users } from 'lucide-react';
+import { Award, ExternalLink, Heart, HelpCircle, Info, Mail, MessageCircle, Server, Shield, Users } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import guideContent from '@/docs/DiscordBotGuide.md?raw';
 
@@ -108,6 +108,27 @@ export const DocumentationModal: React.FC<DocumentationModalProps> = ({
                     />
                   </div>
                 ),
+                // Special styling for Support and Credits sections
+                h3: ({ node, children, ...props }) => {
+                  const headingText = String(children).toLowerCase();
+                  if (headingText.includes('support')) {
+                    return (
+                      <h3 {...props} className="text-xl font-bold mt-6 mb-4 flex items-center gap-2">
+                        <HelpCircle className="h-5 w-5 text-green-400" />
+                        {children}
+                      </h3>
+                    );
+                  } else if (headingText.includes('credits')) {
+                    return (
+                      <h3 {...props} className="text-xl font-bold mt-6 mb-4 flex items-center gap-2">
+                        <Award className="h-5 w-5 text-yellow-400" />
+                        {children}
+                      </h3>
+                    );
+                  } else {
+                    return <h3 {...props} className="text-xl font-bold mt-6 mb-4">{children}</h3>;
+                  }
+                },
               }}
             >
               {guideContent}
@@ -160,6 +181,50 @@ export const DocumentationModal: React.FC<DocumentationModalProps> = ({
                   <span>Connect bot token in this application</span>
                 </li>
               </ul>
+            </div>
+            
+            <div className="mt-8 grid gap-6 md:grid-cols-2">
+              <div className="p-6 bg-gradient-to-br from-green-900/50 to-green-800/30 rounded-lg border border-green-700">
+                <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                  <HelpCircle className="h-5 w-5 text-green-400" />
+                  Need Support?
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2">
+                    <Mail className="h-5 w-5 text-green-400 mt-0.5" />
+                    <div>
+                      <p className="text-green-300 font-medium">Email Support</p>
+                      <p className="text-sm">support@discordbot-manager.com</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <MessageCircle className="h-5 w-5 text-green-400 mt-0.5" />
+                    <div>
+                      <p className="text-green-300 font-medium">Discord Community</p>
+                      <p className="text-sm">Join our server for live assistance</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-6 bg-gradient-to-br from-yellow-900/50 to-yellow-800/30 rounded-lg border border-yellow-700">
+                <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                  <Award className="h-5 w-5 text-yellow-400" />
+                  Credits
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2">
+                    <Heart className="h-5 w-5 text-red-400 mt-0.5" />
+                    <div>
+                      <p className="text-yellow-300 font-medium">Created with ♥ by</p>
+                      <p className="text-sm">DiscordTools Inc.</p>
+                    </div>
+                  </div>
+                  <div className="text-sm mt-2">
+                    <p>© 2024 DiscordTools Inc. All rights reserved.<br/>Version 2.0.3</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </ScrollArea>
