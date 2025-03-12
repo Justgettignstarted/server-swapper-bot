@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -46,7 +47,10 @@ export const DiscordLoginButton: React.FC<DiscordLoginButtonProps> = ({
       console.log("Discord OAuth Redirect URI:", redirectUri);
       
       const encodedRedirectUri = encodeURIComponent(redirectUri);
-      const scope = encodeURIComponent('identify email guilds');
+      
+      // Using the full scope list from your generated URL
+      const scope = encodeURIComponent('identify email guilds bot applications.commands guilds.members.read');
+      
       const state = crypto.randomUUID(); // Generate a random state for security
       
       // Store the state in localStorage to verify when the user comes back
