@@ -1,4 +1,3 @@
-
 /**
  * Discord Bot utility to handle connections and commands
  */
@@ -216,10 +215,11 @@ export const fetchMembers = async (token: string, guildId: string, limit: number
  */
 export const sendBotCommand = async (token: string, command: string, params: Record<string, any> = {}): Promise<any> => {
   try {
-    // Fixed: Use explicit comparison with the string literal 'connected'
-    if (botConnectionStatus !== 'connected') {
+    // Fix: Use proper type narrowing for status comparison
+    const currentStatus = botConnectionStatus;
+    if (currentStatus !== 'connected') {
       await checkBotStatus(token);
-      // Fixed: Use explicit comparison with the string literal 'connected'
+      // Check status again after the connection attempt
       if (botConnectionStatus !== 'connected') {
         throw new Error('Bot is not connected');
       }
