@@ -2,12 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useBot } from '@/context/BotContext';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Server, MessageSquare, Users, Shield } from 'lucide-react';
+import { MessageSquare, Users, Shield } from 'lucide-react';
+import { ServerSelector } from './server-info/ServerSelector';
+import { ChannelsTab } from './server-info/ChannelsTab';
+import { RolesTab } from './server-info/RolesTab';
+import { MembersTab } from './server-info/MembersTab';
 
 export const ServerInfoPanel = () => {
   const { isConnected, fetchGuilds, fetchChannels, fetchRoles, fetchMembers } = useBot();
@@ -126,24 +129,12 @@ export const ServerInfoPanel = () => {
           <CardDescription>
             View information about your Discord servers
           </CardDescription>
-          <div className="mt-4">
-            <Select
-              value={selectedGuild}
-              onValueChange={setSelectedGuild}
-              disabled={loading.guilds || guilds.length === 0}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a server" />
-              </SelectTrigger>
-              <SelectContent>
-                {guilds.map(guild => (
-                  <SelectItem key={guild.id} value={guild.id}>
-                    {guild.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <ServerSelector
+            selectedGuild={selectedGuild}
+            setSelectedGuild={setSelectedGuild}
+            guilds={guilds}
+            loading={loading.guilds}
+          />
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="channels">
@@ -163,68 +154,15 @@ export const ServerInfoPanel = () => {
             </TabsList>
             
             <TabsContent value="channels" className="mt-4">
-              {loading.channels ? (
-                <div className="text-center py-4">Loading channels...</div>
-              ) : channels.length === 0 ? (
-                <div className="text-center py-4 text-muted-foreground">No channels found</div>
-              ) : (
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                  {channels.map(channel => (
-                    <div key={channel.id} className="p-2 rounded-md bg-background/50 flex items-center">
-                      <MessageSquare className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span className="text-sm">{channel.name}</span>
-                      <span className="ml-auto text-xs text-muted-foreground">
-                        {channel.type === 0 ? 'Text' : channel.type === 2 ? 'Voice' : 'Other'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <ChannelsTab channels={channels} loading={loading.channels} />
             </TabsContent>
             
             <TabsContent value="roles" className="mt-4">
-              {loading.roles ? (
-                <div className="text-center py-4">Loading roles...</div>
-              ) : roles.length === 0 ? (
-                <div className="text-center py-4 text-muted-foreground">No roles found</div>
-              ) : (
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                  {roles.map(role => (
-                    <div key={role.id} className="p-2 rounded-md bg-background/50 flex items-center">
-                      <div 
-                        className="w-3 h-3 rounded-full mr-2" 
-                        style={{ backgroundColor: `#${role.color.toString(16).padStart(6, '0')}` }}
-                      ></div>
-                      <span className="text-sm">{role.name}</span>
-                      <span className="ml-auto text-xs text-muted-foreground">
-                        Position: {role.position}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <RolesTab roles={roles} loading={loading.roles} />
             </TabsContent>
             
             <TabsContent value="members" className="mt-4">
-              {loading.members ? (
-                <div className="text-center py-4">Loading members...</div>
-              ) : members.length === 0 ? (
-                <div className="text-center py-4 text-muted-foreground">No members found</div>
-              ) : (
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                  {members.map(member => (
-                    <div key={member.user?.id || member.id} className="p-2 rounded-md bg-background/50 flex items-center">
-                      <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span className="text-sm">
-                        {member.user?.username || member.username || 'Unknown User'}
-                      </span>
-                      <span className="ml-auto text-xs text-muted-foreground">
-                        {member.roles?.length || 0} roles
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <MembersTab members={members} loading={loading.members} />
             </TabsContent>
           </Tabs>
         </CardContent>
