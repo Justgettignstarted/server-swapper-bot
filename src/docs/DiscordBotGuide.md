@@ -3,6 +3,8 @@
 
 This guide explains how our Discord bot integration works and what you need to set up to use it properly.
 
+![Discord Developer Portal](/discord-developer-portal.png)
+
 ## Overview
 
 The Discord bot integration allows you to:
@@ -35,6 +37,8 @@ To use this integration, you'll need:
      - Message Content Intent (for command processing)
      - Presence Intent (optional, for enhanced user status monitoring)
 
+![Discord Bot Permissions](/discord-bot-permissions.png)
+
 3. **Bot Must Be In Your Servers**
    - Your bot must be invited to any Discord servers you want to manage
    - Use the OAuth2 URL Generator in the Discord Developer Portal with the necessary permissions
@@ -52,6 +56,8 @@ To use this integration, you'll need:
    - Message Content Intent
 5. Click "Reset Token" to generate a new token (or copy your existing one)
 6. Save this token securely - you'll need it for this application
+
+![Discord Bot Setup](/discord-bot-setup.png)
 
 ### Connecting Your Bot
 
@@ -71,6 +77,8 @@ The dashboard displays real-time statistics pulled directly from Discord's API:
 - **Verification Rate**: Success rate of verification processes (if applicable)
 
 These statistics are refreshed automatically and can be manually updated using the "Refresh Stats" button.
+
+![Discord Dashboard](/discord-dashboard.png)
 
 ## Command Reference
 
@@ -107,6 +115,8 @@ To use this panel:
 3. Choose what information you want to view (channels, roles, members)
 4. The information will be displayed in a structured format
 
+![Server Information Panel](/server-info-panel.png)
+
 ### User Management Functions
 
 For managing users across servers:
@@ -133,6 +143,8 @@ Discord imposes strict rate limits on API requests:
 - The token is used only for direct API calls to Discord
 - Clear the token when finished by clicking "Clear Token"
 - No server-side storage of your token occurs
+
+![Security Diagram](/security-diagram.png)
 
 ### Error Handling
 
