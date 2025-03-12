@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface DiscordLoginButtonProps {
   className?: string;
@@ -23,21 +24,39 @@ export const DiscordLoginButton: React.FC<DiscordLoginButtonProps> = ({
   const handleClick = () => {
     setIsLoading(true);
     
-    // Get the client ID from environment variables or use the default
-    const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID || DEFAULT_DISCORD_CLIENT_ID;
-    
-    // Important: This must match exactly what you registered in Discord Developer Portal
-    // Use window.location.origin to dynamically get the base URL
-    const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
-    
-    const scope = encodeURIComponent('identify email guilds');
-    const state = crypto.randomUUID(); // Generate a random state for security
-    
-    // Store the state in localStorage to verify when the user comes back
-    localStorage.setItem('discordOAuthState', state);
-    
-    // Redirect to Discord's OAuth page
-    window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=${state}`;
+    try {
+      // Get the client ID from environment variables or use the default
+      const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID || DEFAULT_DISCORD_CLIENT_ID;
+      
+      // Important: This must match exactly what you registered in Discord Developer Portal
+      // We'll use the exact URL format without relying on window.location.origin
+      // This should be registered in Discord developer portal OAuth2 redirect URIs
+      let redirectUri;
+      
+      // Check if we're in development or production environment
+      if (window.location.hostname === 'localhost') {
+        redirectUri = `http://localhost:${window.location.port}/auth/callback`;
+      } else {
+        // For production Lovable environment or any other hosted environment
+        redirectUri = `${window.location.protocol}//${window.location.host}/auth/callback`;
+      }
+      
+      console.log("Using redirect URI:", redirectUri);
+      
+      const encodedRedirectUri = encodeURIComponent(redirectUri);
+      const scope = encodeURIComponent('identify email guilds');
+      const state = crypto.randomUUID(); // Generate a random state for security
+      
+      // Store the state in localStorage to verify when the user comes back
+      localStorage.setItem('discordOAuthState', state);
+      
+      // Redirect to Discord's OAuth page
+      window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodedRedirectUri}&response_type=code&scope=${scope}&state=${state}`;
+    } catch (error) {
+      console.error("Discord auth error:", error);
+      setIsLoading(false);
+      toast.error("Failed to connect to Discord. Please try again.");
+    }
     
     // The onLogin callback will be called in the callback route, not here
   };
