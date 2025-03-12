@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { CommandsPanel } from './CommandsPanel';
 import { ServerTransferSection } from './ServerTransferSection';
@@ -6,8 +7,9 @@ import { NavBar } from './NavBar';
 import { BotSetup } from './BotSetup';
 import { ServerInfoPanel } from './ServerInfoPanel';
 import { DocumentationModal } from './DocumentationModal';
+import { PremiumSection } from './PremiumSection';
 import { motion } from 'framer-motion';
-import { Users, Server, RotateCw, ShieldCheck, HelpCircle } from 'lucide-react';
+import { Users, Server, RotateCw, ShieldCheck, HelpCircle, Crown } from 'lucide-react';
 import { useBot } from '@/context/BotContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -255,6 +257,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               <TabsTrigger value="commands">Commands</TabsTrigger>
               <TabsTrigger value="server-info">Server Information</TabsTrigger>
               <TabsTrigger value="transfer">User Transfer</TabsTrigger>
+              <TabsTrigger value="premium" className="flex items-center gap-1">
+                <Crown className="h-4 w-4 text-amber-500" />
+                Premium
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="commands">
@@ -277,6 +283,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               <div className="max-w-md mx-auto">
                 <ServerTransferSection />
               </div>
+            </TabsContent>
+            
+            <TabsContent value="premium">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="glass p-6 rounded-lg"
+              >
+                <PremiumSection />
+              </motion.div>
             </TabsContent>
           </Tabs>
         )}
