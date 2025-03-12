@@ -10,6 +10,7 @@ import { DashboardHeader } from './dashboard/DashboardHeader';
 import { DashboardStats } from './dashboard/DashboardStats';
 import { DashboardTabs } from './dashboard/DashboardTabs';
 import { PremiumSection } from './PremiumSection';
+import { SubscriptionStatus } from './premium/SubscriptionStatus';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -56,6 +57,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
         
         {activeTab === 'dashboard' && (
           <>
+            {isPremium && (
+              <div className="mb-6">
+                <SubscriptionStatus />
+              </div>
+            )}
+          
             <DashboardHeader 
               isDocOpen={isDocOpen} 
               setIsDocOpen={setIsDocOpen}

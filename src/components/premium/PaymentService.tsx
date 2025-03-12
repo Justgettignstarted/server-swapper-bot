@@ -24,6 +24,12 @@ export const processPayment = async (tierName: string, priceId: string | null) =
     localStorage.setItem('isPremium', 'true');
     localStorage.setItem('premiumTier', tierName);
     
+    // If user downgrades from Enterprise to Pro, we need to update the tier correctly
+    const currentTier = localStorage.getItem('premiumTier');
+    if (currentTier && currentTier !== tierName) {
+      console.log(`Changing premium tier from ${currentTier} to ${tierName}`);
+    }
+    
     // Return true to indicate success and trigger UI updates
     return true;
   } else {
@@ -42,4 +48,14 @@ export const checkPremiumStatus = () => {
 // Function to get the current premium tier
 export const getPremiumTier = () => {
   return localStorage.getItem('premiumTier') || null;
+};
+
+// Function to downgrade to basic (for testing/development)
+export const downgradeToBasic = () => {
+  localStorage.removeItem('isPremium');
+  localStorage.removeItem('premiumTier');
+  toast.info("Account downgraded to Basic plan", {
+    description: "Your account has been downgraded to the Basic plan."
+  });
+  return true;
 };
