@@ -48,9 +48,11 @@ To use this integration, you'll need:
 
 When connected, the dashboard displays:
 - **Authorized Users**: Number of users authorized for transfers
-- **Servers**: Number of Discord servers the bot is a member of
+- **Servers**: Number of Discord servers the bot is a member of 
 - **Transfers Completed**: Number of successful user transfers
 - **Verification Rate**: Percentage of successful transfers out of total attempts
+
+Note: For this demo application, some statistics may be simulated. In a production environment, these would be fetched from your actual Discord bot database.
 
 ### Available Commands
 
@@ -75,7 +77,7 @@ The application provides a UI for these commands:
 2. Enter the destination server ID
 3. Specify the number of users to transfer
 4. Click "Start Transfer"
-5. The application will initiate the transfer and display a progress bar
+5. The application will initiate the transfer and display progress
 6. Once complete, a success notification will appear
 
 ## Security Considerations
@@ -106,6 +108,20 @@ If you encounter issues:
 4. **Role assignment fails**
    - Ensure the bot's role is higher in the hierarchy than the role it's trying to assign
    - Verify that the role ID is correct
+
+5. **Statistics not displaying correctly**
+   - Click the "Refresh Stats" button in the dashboard
+   - Check your bot's connection status
+   - Verify that the bot has access to the required data
+
+## Demo Mode Notice
+
+This application includes a demonstration mode that simulates certain aspects of a Discord bot integration. In this mode:
+
+- The server count reflects your bot's actual servers
+- Other statistics (authorized users, transfers, etc.) are simulated for demonstration purposes
+- Commands execute in a simulated environment
+- No actual Discord users are affected
 
 ## Technical Implementation
 

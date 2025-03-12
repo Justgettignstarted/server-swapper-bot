@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { CommandsPanel } from './CommandsPanel';
 import { ServerTransferSection } from './ServerTransferSection';
@@ -18,7 +19,7 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
-  const { status, checkConnection, connecting, isConnected, executeCommand } = useBot();
+  const { status, checkConnection, connecting, isConnected, executeCommand, fetchGuilds } = useBot();
   const [stats, setStats] = useState({
     authorizedUsers: '0',
     servers: '0',
@@ -26,29 +27,127 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     verificationRate: '0%'
   });
   const [isDocOpen, setIsDocOpen] = useState(false);
+  const [loadingStats, setLoadingStats] = useState(false);
   
   useEffect(() => {
     const fetchStats = async () => {
       if (isConnected) {
+        setLoadingStats(true);
         try {
-          const authResponse = await executeCommand('authorized');
-          if (authResponse.success) {
-            setStats(prev => ({ ...prev, authorizedUsers: authResponse.count.toString() }));
+          // Get servers count directly from fetchGuilds
+          const guilds = await fetchGuilds();
+          const serverCount = guilds.length.toString();
+          setStats(prev => ({ ...prev, servers: serverCount }));
+          
+          // Use more reliable commands for other stats
+          try {
+            const authResponse = await executeCommand('authorized');
+            if (authResponse && authResponse.success) {
+              setStats(prev => ({ ...prev, authorizedUsers: authResponse.count.toString() }));
+            }
+          } catch (error) {
+            console.error('Error fetching authorized users:', error);
+            // Fallback to a reasonable default if the command fails
+            setStats(prev => ({ ...prev, authorizedUsers: '0' }));
           }
           
-          const guildsResponse = await executeCommand('getGuilds');
-          if (guildsResponse.success) {
-            setStats(prev => ({ ...prev, servers: guildsResponse.guilds.length.toString() }));
+          try {
+            const progressResponse = await executeCommand('progress');
+            if (progressResponse && progressResponse.success) {
+              const transfers = progressResponse.transfers || 0;
+              const pendingUsers = progressResponse.pendingUsers || 0;
+              const total = transfers + pendingUsers;
+              
+              setStats(prev => ({ 
+                ...prev, 
+                transfers: transfers.toString(),
+                verificationRate: total > 0 ? 
+                  `${Math.round((transfers / total) * 100)}%` : 
+                  '0%'
+              }));
+            }
+          } catch (error) {
+            console.error('Error fetching transfer progress:', error);
+            // Fallback to reasonable defaults
+            setStats(prev => ({ ...prev, transfers: '0', verificationRate: '0%' }));
+          }
+        } catch (error) {
+          console.error('Error fetching dashboard stats:', error);
+          toast.error('Failed to load dashboard statistics');
+          // Reset stats to zeros on error
+          setStats({
+            authorizedUsers: '0',
+            servers: '0',
+            transfers: '0',
+            verificationRate: '0%'
+          });
+        } finally {
+          setLoadingStats(false);
+        }
+      }
+    };
+    
+    fetchStats();
+    
+    // Set up a refresh interval (every 30 seconds)
+    const interval = setInterval(() => {
+      if (isConnected) {
+        fetchStats();
+      }
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [isConnected, executeCommand, fetchGuilds]);
+  
+  const handleRefreshConnection = () => {
+    checkConnection();
+    toast.info("Checking bot connection...");
+  };
+  
+  const handleRefreshStats = () => {
+    toast.info("Refreshing dashboard statistics...");
+    setStats({
+      authorizedUsers: '0',
+      servers: '0',
+      transfers: '0',
+      verificationRate: '0%'
+    });
+    const fetchStats = async () => {
+      if (isConnected) {
+        try {
+          // Same code as above for fetching stats
+          const guilds = await fetchGuilds();
+          const serverCount = guilds.length.toString();
+          setStats(prev => ({ ...prev, servers: serverCount }));
+          
+          try {
+            const authResponse = await executeCommand('authorized');
+            if (authResponse && authResponse.success) {
+              setStats(prev => ({ ...prev, authorizedUsers: authResponse.count.toString() }));
+            }
+          } catch (error) {
+            console.error('Error fetching authorized users:', error);
+            setStats(prev => ({ ...prev, authorizedUsers: '0' }));
           }
           
-          const progressResponse = await executeCommand('progress');
-          if (progressResponse.success) {
-            setStats(prev => ({ 
-              ...prev, 
-              transfers: progressResponse.transfers.toString(),
-              verificationRate: `${Math.round((progressResponse.transfers / 
-                (progressResponse.transfers + progressResponse.pendingUsers)) * 100)}%` 
-            }));
+          try {
+            const progressResponse = await executeCommand('progress');
+            if (progressResponse && progressResponse.success) {
+              const transfers = progressResponse.transfers || 0;
+              const pendingUsers = progressResponse.pendingUsers || 0;
+              const total = transfers + pendingUsers;
+              
+              setStats(prev => ({ 
+                ...prev, 
+                transfers: transfers.toString(),
+                verificationRate: total > 0 ? 
+                  `${Math.round((transfers / total) * 100)}%` : 
+                  '0%'
+              }));
+            }
+          } catch (error) {
+            console.error('Error fetching transfer progress:', error);
+            setStats(prev => ({ ...prev, transfers: '0', verificationRate: '0%' }));
           }
         } catch (error) {
           console.error('Error fetching dashboard stats:', error);
@@ -56,13 +155,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         }
       }
     };
-    
     fetchStats();
-  }, [isConnected, executeCommand]);
-  
-  const handleRefreshConnection = () => {
-    checkConnection();
-    toast.info("Checking bot connection...");
   };
   
   return (
@@ -103,6 +196,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             >
               {connecting ? 'Checking...' : 'Refresh Connection'}
             </Button>
+            {isConnected && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefreshStats}
+                disabled={loadingStats}
+              >
+                {loadingStats ? 'Refreshing...' : 'Refresh Stats'}
+              </Button>
+            )}
           </div>
         </div>
         
@@ -121,22 +224,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <StatisticsCard 
                 title="Authorized Users" 
-                value={stats.authorizedUsers} 
+                value={loadingStats ? '...' : stats.authorizedUsers} 
                 icon={<Users className="h-6 w-6 text-primary" />} 
               />
               <StatisticsCard 
                 title="Servers" 
-                value={stats.servers} 
+                value={loadingStats ? '...' : stats.servers} 
                 icon={<Server className="h-6 w-6 text-primary" />} 
               />
               <StatisticsCard 
                 title="Transfers Completed" 
-                value={stats.transfers} 
+                value={loadingStats ? '...' : stats.transfers} 
                 icon={<RotateCw className="h-6 w-6 text-primary" />} 
               />
               <StatisticsCard 
                 title="Verification Rate" 
-                value={stats.verificationRate} 
+                value={loadingStats ? '...' : stats.verificationRate} 
                 icon={<ShieldCheck className="h-6 w-6 text-primary" />} 
               />
             </div>
