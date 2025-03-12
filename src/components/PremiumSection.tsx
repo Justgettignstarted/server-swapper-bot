@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Zap, Shield, Users, BarChart, CheckCircle } from "lucide-react";
+import { Crown, Zap, Shield, Users, BarChart, CheckCircle, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useBot } from "@/context/BotContext";
 import { 
@@ -22,6 +22,7 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { createMockCheckoutSession, redirectToCheckout } from "@/utils/mockApi";
 
 export const PremiumSection: React.FC = () => {
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
@@ -43,7 +44,8 @@ export const PremiumSection: React.FC = () => {
       buttonText: "Current Plan",
       buttonVariant: "outline" as const,
       isCurrent: true,
-      highlight: false
+      highlight: false,
+      priceId: null
     },
     {
       name: "Pro",
@@ -59,7 +61,8 @@ export const PremiumSection: React.FC = () => {
       buttonText: "Upgrade to Pro",
       buttonVariant: "default" as const,
       isCurrent: false,
-      highlight: true
+      highlight: true,
+      priceId: "price_1OyrW5LkdIwI9nUVmNuLOzOw"
     },
     {
       name: "Enterprise",
@@ -76,7 +79,8 @@ export const PremiumSection: React.FC = () => {
       buttonText: "Upgrade to Enterprise",
       buttonVariant: "outline" as const,
       isCurrent: false,
-      highlight: false
+      highlight: false,
+      priceId: "price_1OyrXHLkdIwI9nUVoR5gyvku"
     }
   ];
 
@@ -89,20 +93,36 @@ export const PremiumSection: React.FC = () => {
     if (!selectedTier) return;
     
     setIsProcessing(true);
+    
     try {
-      // Simulate API call to upgrade subscription
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Find the selected tier
+      const tier = tiers.find(t => t.name === selectedTier);
       
-      // In a real app, we would call the bot's API to upgrade the subscription
-      // For now, we'll just show a success message
-      toast.success(`Successfully upgraded to ${selectedTier} plan!`, {
-        description: "Your new benefits are now available",
-        icon: <CheckCircle className="h-4 w-4 text-green-500" />
-      });
+      if (!tier || !tier.priceId) {
+        throw new Error('Invalid tier or missing price ID');
+      }
+      
+      // Create a checkout session
+      const { sessionId } = await createMockCheckoutSession(tier.priceId);
+      
+      // Redirect to checkout
+      const { success } = await redirectToCheckout(sessionId);
+      
+      if (success) {
+        toast.success(`Successfully upgraded to ${selectedTier} plan!`, {
+          description: "Your payment was processed successfully. Your new benefits are now available.",
+          icon: <CheckCircle className="h-4 w-4 text-green-500" />
+        });
+      } else {
+        toast.error("Payment failed", {
+          description: "The payment could not be processed. Please try again or use a different payment method."
+        });
+      }
       
       setUpgradeDialogOpen(false);
     } catch (error) {
-      toast.error("Failed to upgrade subscription. Please try again.");
+      console.error('Payment error:', error);
+      toast.error("Failed to process payment. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -236,7 +256,13 @@ export const PremiumSection: React.FC = () => {
               onClick={handleConfirmUpgrade}
               disabled={isProcessing}
             >
-              {isProcessing ? "Processing..." : "Confirm Upgrade"}
+              {isProcessing ? 
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Processing...
+                </div> : 
+                "Confirm Payment"
+              }
             </Button>
           </DialogFooter>
         </DialogContent>
