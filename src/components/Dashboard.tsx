@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { CommandsPanel } from './CommandsPanel';
 import { ServerTransferSection } from './ServerTransferSection';
 import { StatisticsCard } from './StatisticsCard';
@@ -18,7 +18,50 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
-  const { status, checkConnection, connecting, isConnected } = useBot();
+  const { status, checkConnection, connecting, isConnected, executeCommand } = useBot();
+  const [stats, setStats] = useState({
+    authorizedUsers: '0',
+    servers: '0',
+    transfers: '0',
+    verificationRate: '0%'
+  });
+  
+  // Fetch stats when connected
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (isConnected) {
+        try {
+          // Fetch authorized users count
+          const authResponse = await executeCommand('authorized');
+          if (authResponse.success) {
+            setStats(prev => ({ ...prev, authorizedUsers: authResponse.count.toString() }));
+          }
+          
+          // Fetch guild count
+          const guildsResponse = await executeCommand('getGuilds');
+          if (guildsResponse.success) {
+            setStats(prev => ({ ...prev, servers: guildsResponse.guilds.length.toString() }));
+          }
+          
+          // Fetch transfer progress
+          const progressResponse = await executeCommand('progress');
+          if (progressResponse.success) {
+            setStats(prev => ({ 
+              ...prev, 
+              transfers: progressResponse.transfers.toString(),
+              verificationRate: `${Math.round((progressResponse.transfers / 
+                (progressResponse.transfers + progressResponse.pendingUsers)) * 100)}%` 
+            }));
+          }
+        } catch (error) {
+          console.error('Error fetching dashboard stats:', error);
+          toast.error('Failed to load dashboard statistics');
+        }
+      }
+    };
+    
+    fetchStats();
+  }, [isConnected, executeCommand]);
   
   const handleRefreshConnection = () => {
     checkConnection();
@@ -70,22 +113,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <StatisticsCard 
                 title="Authorized Users" 
-                value="783" 
+                value={stats.authorizedUsers} 
                 icon={<Users className="h-6 w-6 text-primary" />} 
               />
               <StatisticsCard 
                 title="Servers" 
-                value="5" 
+                value={stats.servers} 
                 icon={<Server className="h-6 w-6 text-primary" />} 
               />
               <StatisticsCard 
                 title="Transfers Completed" 
-                value="13" 
+                value={stats.transfers} 
                 icon={<RotateCw className="h-6 w-6 text-primary" />} 
               />
               <StatisticsCard 
                 title="Verification Rate" 
-                value="98%" 
+                value={stats.verificationRate} 
                 icon={<ShieldCheck className="h-6 w-6 text-primary" />} 
               />
             </div>
@@ -127,3 +170,4 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     </div>
   );
 };
+
