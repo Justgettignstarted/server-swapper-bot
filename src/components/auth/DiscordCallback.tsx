@@ -20,18 +20,21 @@ export const DiscordCallback = () => {
         const code = urlParams.get('code');
         const state = urlParams.get('state');
         const errorParam = urlParams.get('error');
+        const errorDescription = urlParams.get('error_description');
         
         console.log("Auth callback received:", { 
           code: code ? `${code.substring(0, 6)}...` : null, 
           state, 
-          error: errorParam 
+          error: errorParam,
+          errorDescription
         });
         
         // Verify that we have a code and there's no error
         if (errorParam) {
-          console.error("Discord auth error:", errorParam);
-          setError(`Authentication failed: ${errorParam}`);
-          toast.error(`Discord authentication failed: ${errorParam}`);
+          console.error("Discord auth error:", errorParam, errorDescription);
+          const errorMessage = errorDescription || `Authentication failed: ${errorParam}`;
+          setError(errorMessage);
+          toast.error(errorMessage);
           setProcessing(false);
           setTimeout(() => navigate('/'), 3000);
           return;

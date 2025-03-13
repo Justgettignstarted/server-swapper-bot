@@ -26,9 +26,10 @@ export const DiscordLoginButton: React.FC<DiscordLoginButtonProps> = ({
       // Get the client ID from environment variables or use the default
       const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID || DEFAULT_DISCORD_CLIENT_ID;
       
-      // IMPORTANT: This exact redirect URI must be configured in the Discord Developer Portal
-      // No trailing slash, consistent across all environments
-      const redirectUri = 'http://localhost:8080/auth/callback';
+      // Use the current origin to dynamically create the redirect URI
+      // This ensures it works in both local development and production
+      const currentOrigin = window.location.origin; // e.g. http://localhost:8080
+      const redirectUri = `${currentOrigin}/auth/callback`;
       
       // Log the redirect URI to help with debugging
       console.log("Discord OAuth Redirect URI:", redirectUri);
