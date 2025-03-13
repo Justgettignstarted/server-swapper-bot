@@ -10,7 +10,10 @@ interface Transfer {
   created_at: string;
   users_processed: number;
   amount: number;
-  status: 'completed' | 'in-progress' | 'cancelled';
+  status: 'completed' | 'in-progress' | 'cancelled' | string; // Match the type in useRecentTransfers
+  transfer_id?: string;
+  updated_at?: string;
+  progress?: number;
 }
 
 interface RecentTransfersProps {
