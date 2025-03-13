@@ -12,3 +12,12 @@ export interface CommandParams {
   serverId?: string;
   amount?: number;
 }
+
+export interface CommandHistoryEntry {
+  id: string;
+  command: string;
+  timestamp: Date;
+  success: boolean;
+  result: any;
+  favorite?: boolean;
+}
