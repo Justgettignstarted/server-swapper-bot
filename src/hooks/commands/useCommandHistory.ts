@@ -37,7 +37,8 @@ export const useCommandHistory = () => {
       timestamp: new Date(),
       success,
       result,
-      favorite: false
+      favorite: false,
+      tags: []
     };
     
     // Add to the beginning of the array (newest first)
@@ -63,6 +64,35 @@ export const useCommandHistory = () => {
     );
   };
   
+  const addTagToCommand = (id: string, tag: string) => {
+    setCommandHistory(prev => 
+      prev.map(entry => {
+        if (entry.id === id) {
+          const currentTags = entry.tags || [];
+          // Only add the tag if it's not already there
+          if (!currentTags.includes(tag)) {
+            return { ...entry, tags: [...currentTags, tag] };
+          }
+        }
+        return entry;
+      })
+    );
+  };
+  
+  const removeTagFromCommand = (id: string, tag: string) => {
+    setCommandHistory(prev => 
+      prev.map(entry => {
+        if (entry.id === id && entry.tags) {
+          return { 
+            ...entry, 
+            tags: entry.tags.filter(t => t !== tag) 
+          };
+        }
+        return entry;
+      })
+    );
+  };
+  
   const getFavoriteCommands = () => {
     return commandHistory.filter(entry => entry.favorite);
   };
@@ -72,6 +102,8 @@ export const useCommandHistory = () => {
     addCommandToHistory,
     clearCommandHistory,
     toggleFavorite,
+    addTagToCommand,
+    removeTagFromCommand,
     getFavoriteCommands
   };
 };
