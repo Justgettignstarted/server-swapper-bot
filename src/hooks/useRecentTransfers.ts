@@ -9,7 +9,10 @@ interface Transfer {
   created_at: string;
   users_processed: number;
   amount: number;
-  status: 'completed' | 'in-progress' | 'cancelled';
+  status: 'completed' | 'in-progress' | 'cancelled' | string; // Allow any string to accommodate all possible values from Supabase
+  transfer_id?: string;
+  updated_at?: string;
+  progress?: number;
 }
 
 export const useRecentTransfers = () => {
@@ -23,7 +26,8 @@ export const useRecentTransfers = () => {
       .limit(5);
       
     if (!error && data) {
-      setRecentTransfers(data);
+      // Type assertion to ensure data conforms to the Transfer interface
+      setRecentTransfers(data as Transfer[]);
     }
   };
   
