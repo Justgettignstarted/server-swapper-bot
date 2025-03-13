@@ -3,8 +3,20 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { AtSign, Diamond, Crown } from 'lucide-react';
+import { AtSign, Diamond, Crown, User, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card';
+import {
+  getDiscordUser,
+  getDiscordAvatarUrl,
+  getDiscordBannerUrl,
+  getDiscordPremiumBadge
+} from '@/utils/auth/discordAuth';
 
 interface NavBarProps {
   className?: string;
@@ -44,8 +56,16 @@ export const NavBar: React.FC<NavBarProps> = ({
     }
   };
 
-  // Split the Discord username into name and discriminator
-  const formatDiscordUsername = (discordName: string) => {
+  // Get Discord user info
+  const discordUser = getDiscordUser();
+  const avatarUrl = getDiscordAvatarUrl(discordUser);
+  const bannerUrl = getDiscordBannerUrl(discordUser);
+  const nitroStatus = getDiscordPremiumBadge(discordUser);
+
+  // Split the Discord username for display
+  const formatDiscordUsernameDisplay = (discordName: string | undefined) => {
+    if (!discordName) return null;
+    
     if (discordName && discordName.includes('#')) {
       const [name, discriminator] = discordName.split('#');
       return (
@@ -81,22 +101,91 @@ export const NavBar: React.FC<NavBarProps> = ({
       
       <div className="flex items-center gap-4">
         {isAuthorized && username && (
-          <div className="flex items-center gap-2 bg-discord-darker/30 px-3 py-1.5 rounded-md">
-            <AtSign className="h-4 w-4 text-discord-blurple" />
-            <div className="flex items-center">
-              {formatDiscordUsername(username)}
-            </div>
-            
-            {isPremium && (
-              <Badge 
-                variant="outline" 
-                className={`ml-1 ${badgeStyles.bg} ${badgeStyles.text} ${badgeStyles.border} px-2 py-0 flex items-center gap-1`}
-              >
-                {badgeStyles.icon}
-                <span className="text-xs">{premiumTier?.toUpperCase()}</span>
-              </Badge>
-            )}
-          </div>
+          <HoverCard>
+            <HoverCardTrigger asChild>
+              <div className="flex items-center gap-2 bg-discord-darker/30 px-3 py-1.5 rounded-md cursor-pointer">
+                <Avatar className="h-7 w-7 border-2 border-discord-blurple/30">
+                  <AvatarImage src={avatarUrl} alt={username} />
+                  <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                </Avatar>
+                
+                <div className="flex items-center">
+                  {formatDiscordUsernameDisplay(username)}
+                </div>
+                
+                {isPremium && (
+                  <Badge 
+                    variant="outline" 
+                    className={`ml-1 ${badgeStyles.bg} ${badgeStyles.text} ${badgeStyles.border} px-2 py-0 flex items-center gap-1`}
+                  >
+                    {badgeStyles.icon}
+                    <span className="text-xs">{premiumTier?.toUpperCase()}</span>
+                  </Badge>
+                )}
+              </div>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-80 p-0 bg-discord-darker/90 border-discord-blurple/20 text-white">
+              <div className="relative">
+                {bannerUrl && (
+                  <div className="h-24 w-full overflow-hidden rounded-t-md">
+                    <img 
+                      src={bannerUrl} 
+                      alt="User Banner" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className={`p-4 ${bannerUrl ? 'pt-2' : ''}`}>
+                  <div className="flex items-start gap-3">
+                    <Avatar className={`h-16 w-16 border-4 border-discord-darker ${bannerUrl ? '-mt-8' : ''}`}>
+                      <AvatarImage src={avatarUrl} alt={username} />
+                      <AvatarFallback><User className="h-6 w-6" /></AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-lg font-bold">{discordUser?.global_name || discordUser?.username}</h3>
+                          {discordUser?.global_name && (
+                            <p className="text-xs text-gray-400">@{discordUser?.username}</p>
+                          )}
+                        </div>
+                        
+                        {discordUser?.id && (
+                          <a 
+                            href={`https://discord.com/users/${discordUser.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-gray-400 hover:text-white transition-colors"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {nitroStatus && (
+                          <Badge variant="secondary" className="bg-discord-blurple/20 text-discord-blurple border-discord-blurple/30">
+                            {nitroStatus}
+                          </Badge>
+                        )}
+                        
+                        {discordUser?.accent_color && (
+                          <Badge 
+                            variant="outline" 
+                            className="border-gray-700"
+                            style={{ backgroundColor: `#${discordUser.accent_color.toString(16).padStart(6, '0')}20` }}
+                          >
+                            Accent Color
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </HoverCardContent>
+          </HoverCard>
         )}
         
         {isAuthorized && onLogout && (

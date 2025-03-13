@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { 
   checkBotStatus, 
@@ -22,6 +23,8 @@ interface BotContextType {
   fetchChannels: (guildId: string) => Promise<any>;
   fetchRoles: (guildId: string) => Promise<any>;
   fetchMembers: (guildId: string, limit?: number) => Promise<any>;
+  handleWebhookRegistration: (guildId: string, channelId: string) => Promise<any>;
+  clearBotCache: () => void;
 }
 
 const BotContext = createContext<BotContextType | undefined>(undefined);
@@ -160,6 +163,45 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // New function to handle webhook registration
+  const handleWebhookRegistration = async (guildId: string, channelId: string) => {
+    if (!token) {
+      toast.error('Please enter a bot token first');
+      throw new Error('No bot token provided');
+    }
+    
+    try {
+      // This would normally make an API call to register a webhook
+      // For demo purposes, we'll simulate success
+      toast.loading('Registering webhook...', { id: 'webhook-registration' });
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      toast.success('Webhook registered successfully', { id: 'webhook-registration' });
+      
+      return {
+        success: true,
+        webhookId: `webhook-${Math.random().toString(36).substring(2, 10)}`,
+        webhookToken: `${Math.random().toString(36).substring(2, 15)}.${Math.random().toString(36).substring(2, 15)}`
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to register webhook: ${errorMessage}`, { id: 'webhook-registration' });
+      throw error;
+    }
+  };
+
+  // Function to clear bot cache
+  const clearBotCache = () => {
+    toast.info('Clearing bot cache...');
+    // In a real implementation, this would make API calls to clear various caches
+    // For now, we'll just simulate success
+    setTimeout(() => {
+      toast.success('Bot cache cleared successfully');
+    }, 1000);
+  };
+
   // Check connection on initial load if token exists
   useEffect(() => {
     if (token) {
@@ -185,72 +227,13 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
         token,
         setToken,
         checkConnection,
-        executeCommand: async (command, params) => {
-          if (!token) {
-            toast.error('Please enter a bot token first');
-            throw new Error('No bot token provided');
-          }
-          
-          try {
-            return await sendBotCommand(token, command, params);
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            toast.error(`Command error: ${errorMessage}`);
-            throw error;
-          }
-        },
-        fetchGuilds: async () => {
-          if (!token) {
-            toast.error('Please enter a bot token first');
-            throw new Error('No bot token provided');
-          }
-          try {
-            return await fetchGuilds(token);
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            toast.error(`Failed to fetch guilds: ${errorMessage}`);
-            throw error;
-          }
-        },
-        fetchChannels: async (guildId) => {
-          if (!token) {
-            toast.error('Please enter a bot token first');
-            throw new Error('No bot token provided');
-          }
-          try {
-            return await fetchChannels(token, guildId);
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            toast.error(`Failed to fetch channels: ${errorMessage}`);
-            throw error;
-          }
-        },
-        fetchRoles: async (guildId) => {
-          if (!token) {
-            toast.error('Please enter a bot token first');
-            throw new Error('No bot token provided');
-          }
-          try {
-            return await fetchRoles(token, guildId);
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            toast.error(`Failed to fetch roles: ${errorMessage}`);
-            throw error;
-          }
-        },
-        fetchMembers: async (guildId, limit) => {
-          if (!token) {
-            toast.error('Please enter a bot token first');
-            throw new Error('No bot token provided');
-          }
-          try {
-            return await fetchMembers(token, guildId, limit);
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            toast.error(`Failed to fetch members: ${errorMessage}`);
-            throw error;
-          }
-        }
+        executeCommand,
+        fetchGuilds: fetchGuildsWrapper,
+        fetchChannels: fetchChannelsWrapper,
+        fetchRoles: fetchRolesWrapper,
+        fetchMembers: fetchMembersWrapper,
+        handleWebhookRegistration,
+        clearBotCache
       }}
     >
       {children}

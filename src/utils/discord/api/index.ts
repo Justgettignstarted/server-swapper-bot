@@ -6,3 +6,4 @@ export { fetchGuilds } from './guilds';
 export { fetchChannels } from './channels';
 export { fetchRoles } from './roles';
 export { fetchMembers } from './members';
+export { createWebhook, executeWebhook, getChannelWebhooks, deleteWebhook } from './webhooks';

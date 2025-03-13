@@ -13,7 +13,11 @@ import {
   fetchGuilds,
   fetchChannels,
   fetchRoles,
-  fetchMembers
+  fetchMembers,
+  createWebhook,
+  executeWebhook,
+  getChannelWebhooks,
+  deleteWebhook
 } from './api';
 
 // Import from the new location
@@ -37,6 +41,12 @@ export {
   fetchChannels,
   fetchRoles,
   fetchMembers,
+  
+  // Webhook functions
+  createWebhook,
+  executeWebhook,
+  getChannelWebhooks,
+  deleteWebhook,
   
   // Command functions
   sendBotCommand

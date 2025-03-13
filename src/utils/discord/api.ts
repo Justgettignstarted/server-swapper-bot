@@ -8,7 +8,11 @@ import {
   fetchGuilds,
   fetchChannels,
   fetchRoles,
-  fetchMembers
+  fetchMembers,
+  createWebhook,
+  executeWebhook,
+  getChannelWebhooks,
+  deleteWebhook
 } from './api/index';
 
 // Re-export everything
@@ -18,5 +22,9 @@ export {
   fetchGuilds,
   fetchChannels,
   fetchRoles,
-  fetchMembers
+  fetchMembers,
+  createWebhook,
+  executeWebhook,
+  getChannelWebhooks,
+  deleteWebhook
 };
