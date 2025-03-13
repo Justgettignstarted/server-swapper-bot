@@ -19,7 +19,11 @@ export const DiscordCallback = () => {
         const state = urlParams.get('state');
         const errorParam = urlParams.get('error');
         
-        console.log("Auth callback received:", { code: code?.substring(0, 6) + "...", state, error: errorParam });
+        console.log("Auth callback received:", { 
+          code: code ? `${code.substring(0, 6)}...` : null, 
+          state, 
+          error: errorParam 
+        });
         
         // Verify that we have a code and there's no error
         if (errorParam) {
@@ -55,7 +59,7 @@ export const DiscordCallback = () => {
         console.log('Received valid Discord OAuth code:', code.substring(0, 6) + "...");
         
         // Simulate successful authentication with mock data
-        // In a real app, this would come from Discord's API response
+        // In a real app, this would come from Discord's API response after token exchange
         const mockDiscordUserData = {
           id: '123456789012345678',
           username: 'DiscordUser',
@@ -74,7 +78,10 @@ export const DiscordCallback = () => {
         localStorage.removeItem('discordOAuthState');
         
         // Redirect back to the home page after a short delay
-        setTimeout(() => navigate('/'), 1500);
+        setTimeout(() => {
+          console.log('Redirecting to home page...');
+          navigate('/');
+        }, 1500);
       } catch (err) {
         console.error('Error processing Discord callback:', err);
         setError('Failed to complete authentication');
@@ -113,6 +120,7 @@ export const DiscordCallback = () => {
                 </div>
                 <h2 className="text-2xl font-bold text-white">Authentication Successful!</h2>
                 <p className="text-white/80">You have successfully authenticated with Discord.</p>
+                <p className="text-white/60">Redirecting to dashboard...</p>
               </>
             )}
           </div>
