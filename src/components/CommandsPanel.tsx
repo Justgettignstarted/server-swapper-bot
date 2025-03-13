@@ -17,8 +17,6 @@ export const CommandsPanel = () => {
     addCommandToHistory, 
     clearCommandHistory,
     toggleFavorite,
-    addTagToCommand,
-    removeTagFromCommand,
     getFavoriteCommands
   } = useCommandHistory();
   
@@ -44,8 +42,6 @@ export const CommandsPanel = () => {
         favorites={favoriteCommands}
         onCommandClick={handleCommandExecution}
         onToggleFavorite={toggleFavorite}
-        onAddTag={addTagToCommand}
-        onRemoveTag={removeTagFromCommand}
       />
       
       <CommandList 

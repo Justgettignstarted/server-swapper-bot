@@ -20,5 +20,4 @@ export interface CommandHistoryEntry {
   success: boolean;
   result: any;
   favorite?: boolean;
-  tags?: string[];  // New field for categorizing commands
 }
