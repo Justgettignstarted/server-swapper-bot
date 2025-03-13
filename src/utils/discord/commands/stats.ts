@@ -1,40 +1,36 @@
 
 import { DISCORD_API_BASE, rateLimitAwareFetch } from '../api/base';
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Fetch actual transfer statistics
  */
 export const fetchTransferStats = async (token: string): Promise<any> => {
   try {
-    // In a real app, this would query a database for actual transfer statistics
-    // For this demo, we'll return realistic simulated data based on the guilds
+    // Get transfer statistics from Supabase
+    const { data: transfers, error: transfersError } = await supabase
+      .from('transfers')
+      .select('*');
     
-    const guildsResponse = await rateLimitAwareFetch(`${DISCORD_API_BASE}/users/@me/guilds`, {
-      headers: {
-        'Authorization': `Bot ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!guildsResponse.ok) {
-      throw new Error(`Failed to fetch guilds: ${guildsResponse.status}`);
-    }
-    
-    const guilds = await guildsResponse.json();
-    
-    if (!guilds || !Array.isArray(guilds) || guilds.length === 0) {
+    if (transfersError) {
+      console.error('Error fetching transfers:', transfersError);
       return { success: true, transfers: 0, pendingUsers: 0 };
     }
     
-    // Generate consistent but realistic values based on the actual guilds
-    const guildIdSum = guilds.reduce((sum, guild) => sum + parseInt(guild.id.slice(-4), 10), 0);
-    const seed = guildIdSum % 100;
+    // Count completed transfers
+    const completedTransfers = transfers.filter(t => t.status === 'completed').length;
     
-    // Generate values based on the seed
-    const transfers = Math.max(3, Math.floor((seed / 100) * 15) + 2);
-    const pendingUsers = Math.max(2, Math.floor((seed / 100) * 10) + 1);
+    // Count pending users from in-progress transfers
+    const pendingUsers = transfers
+      .filter(t => t.status === 'in-progress')
+      .reduce((sum, t) => sum + (t.amount - t.users_processed), 0);
     
-    return { success: true, transfers, pendingUsers };
+    return { 
+      success: true, 
+      transfers: completedTransfers, 
+      pendingUsers: pendingUsers,
+      allTransfers: transfers
+    };
   } catch (error) {
     console.error('Error in fetchTransferStats:', error);
     return { success: true, transfers: 0, pendingUsers: 0 };

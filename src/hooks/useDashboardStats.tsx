@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useBot } from '@/context/BotContext';
 import { toast } from 'sonner';
+import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardStats {
   authorizedUsers: string;
@@ -47,23 +48,49 @@ export const useDashboardStats = () => {
           }
           
           try {
-            const progressResponse = await executeCommand('progress');
-            if (progressResponse && progressResponse.success) {
-              const transfers = progressResponse.transfers || 0;
-              const pendingUsers = progressResponse.pendingUsers || 0;
-              const total = transfers + pendingUsers;
+            // Get transfer data directly from Supabase
+            const { data: transfers, error } = await supabase
+              .from('transfers')
+              .select('*');
               
-              setStats(prev => ({ 
-                ...prev, 
-                transfers: transfers.toString(),
-                verificationRate: total > 0 ? 
-                  `${Math.round((transfers / total) * 100)}%` : 
-                  '0%'
-              }));
+            if (error) {
+              throw error;
+            }
+            
+            const completedTransfers = transfers.filter(t => t.status === 'completed').length;
+            setStats(prev => ({ ...prev, transfers: completedTransfers.toString() }));
+            
+            // Calculate verification rate
+            const totalUsers = transfers.reduce((sum, t) => sum + t.amount, 0);
+            const processedUsers = transfers.reduce((sum, t) => sum + t.users_processed, 0);
+            
+            if (totalUsers > 0) {
+              const rate = Math.round((processedUsers / totalUsers) * 100);
+              setStats(prev => ({ ...prev, verificationRate: `${rate}%` }));
             }
           } catch (error) {
             console.error('Error fetching transfer progress:', error);
             toast.error('Failed to fetch transfer statistics');
+            
+            // Fallback to the command
+            try {
+              const progressResponse = await executeCommand('progress');
+              if (progressResponse && progressResponse.success) {
+                const transfers = progressResponse.transfers || 0;
+                const pendingUsers = progressResponse.pendingUsers || 0;
+                const total = transfers + pendingUsers;
+                
+                setStats(prev => ({ 
+                  ...prev, 
+                  transfers: transfers.toString(),
+                  verificationRate: total > 0 ? 
+                    `${Math.round((transfers / total) * 100)}%` : 
+                    '0%'
+                }));
+              }
+            } catch (error) {
+              console.error('Error fetching transfer progress via command:', error);
+            }
           }
         } catch (error) {
           console.error('Error fetching dashboard stats:', error);
@@ -76,14 +103,34 @@ export const useDashboardStats = () => {
     
     fetchStats();
     
-    // Set up a refresh interval (every 60 seconds instead of 30 to avoid rate limits)
+    // Set up a refresh interval (every 30 seconds)
     const interval = setInterval(() => {
       if (isConnected) {
         fetchStats();
       }
-    }, 60000);
+    }, 30000);
     
-    return () => clearInterval(interval);
+    // Set up a subscription for real-time updates to transfers
+    const channel = supabase
+      .channel('transfers-channel')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'transfers'
+        },
+        () => {
+          // When transfers change, refresh stats
+          fetchStats();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, [isConnected, executeCommand, fetchGuilds]);
 
   const refreshStats = async () => {
@@ -114,19 +161,25 @@ export const useDashboardStats = () => {
         }
         
         try {
-          const progressResponse = await executeCommand('progress');
-          if (progressResponse && progressResponse.success) {
-            const transfers = progressResponse.transfers || 0;
-            const pendingUsers = progressResponse.pendingUsers || 0;
-            const total = transfers + pendingUsers;
+          // Get transfer data directly from Supabase
+          const { data: transfers, error } = await supabase
+            .from('transfers')
+            .select('*');
             
-            setStats(prev => ({ 
-              ...prev, 
-              transfers: transfers.toString(),
-              verificationRate: total > 0 ? 
-                `${Math.round((transfers / total) * 100)}%` : 
-                '0%'
-            }));
+          if (error) {
+            throw error;
+          }
+          
+          const completedTransfers = transfers.filter(t => t.status === 'completed').length;
+          setStats(prev => ({ ...prev, transfers: completedTransfers.toString() }));
+          
+          // Calculate verification rate
+          const totalUsers = transfers.reduce((sum, t) => sum + t.amount, 0);
+          const processedUsers = transfers.reduce((sum, t) => sum + t.users_processed, 0);
+          
+          if (totalUsers > 0) {
+            const rate = Math.round((processedUsers / totalUsers) * 100);
+            setStats(prev => ({ ...prev, verificationRate: `${rate}%` }));
           }
         } catch (error) {
           console.error('Error fetching transfer progress:', error);

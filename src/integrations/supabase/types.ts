@@ -59,6 +59,83 @@ export type Database = {
           },
         ]
       }
+      transfer_users: {
+        Row: {
+          created_at: string | null
+          id: string
+          status: string | null
+          transfer_id: string | null
+          transferred_at: string | null
+          user_id: string | null
+          username: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          transfer_id?: string | null
+          transferred_at?: string | null
+          user_id?: string | null
+          username?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          transfer_id?: string | null
+          transferred_at?: string | null
+          user_id?: string | null
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfer_users_transfer_id_fkey"
+            columns: ["transfer_id"]
+            isOneToOne: false
+            referencedRelation: "transfers"
+            referencedColumns: ["transfer_id"]
+          },
+        ]
+      }
+      transfers: {
+        Row: {
+          amount: number
+          created_at: string | null
+          guild_id: string
+          guild_name: string | null
+          id: string
+          progress: number | null
+          status: string | null
+          transfer_id: string
+          updated_at: string | null
+          users_processed: number | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          guild_id: string
+          guild_name?: string | null
+          id?: string
+          progress?: number | null
+          status?: string | null
+          transfer_id: string
+          updated_at?: string | null
+          users_processed?: number | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          guild_id?: string
+          guild_name?: string | null
+          id?: string
+          progress?: number | null
+          status?: string | null
+          transfer_id?: string
+          updated_at?: string | null
+          users_processed?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

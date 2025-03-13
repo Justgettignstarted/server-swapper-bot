@@ -32,6 +32,7 @@ export const useCommandExecution = () => {
         case 'progress':
           response = await executeCommand('progress');
           toast.success(`Transfers completed: ${response.transfers}, Pending users: ${response.pendingUsers}`, { id: `cmd-${cmd}` });
+          console.log('All transfers:', response.allTransfers);
           break;
           
         case 'refreshtokens':

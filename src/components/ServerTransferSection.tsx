@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { useBot } from '@/context/BotContext';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Users, Server } from 'lucide-react';
+import { supabase } from "@/integrations/supabase/client";
 
 export const ServerTransferSection = () => {
   const [serverId, setServerId] = useState('');
@@ -27,14 +28,40 @@ export const ServerTransferSection = () => {
   useEffect(() => {
     if (!transferId || progress >= 100) return;
     
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel(`transfer-${transferId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'transfers',
+          filter: `transfer_id=eq.${transferId}`
+        },
+        payload => {
+          if (payload.new) {
+            const transfer = payload.new as any;
+            setProgress(transfer.progress);
+            setUsersTransferred(transfer.users_processed);
+            
+            if (transfer.status === 'completed') {
+              toast.success(`Successfully transferred ${transfer.amount} users to server ${transfer.guild_name}`);
+            }
+          }
+        }
+      )
+      .subscribe();
+    
+    // As a backup, still poll for updates every 5 seconds in case realtime fails
     const interval = setInterval(async () => {
       try {
         const statusResponse = await executeCommand('transferStatus', { transferId });
         if (statusResponse.progress) {
           setProgress(statusResponse.progress);
-          setUsersTransferred(Math.floor((statusResponse.progress / 100) * totalUsers));
+          setUsersTransferred(statusResponse.usersProcessed);
           
-          if (statusResponse.progress >= 100) {
+          if (statusResponse.status === 'completed') {
             toast.success(`Successfully transferred ${totalUsers} users to server ${serverId}`);
             clearInterval(interval);
           }
@@ -42,9 +69,12 @@ export const ServerTransferSection = () => {
       } catch (error) {
         console.error("Failed to check transfer status:", error);
       }
-    }, 3000);
+    }, 5000);
     
-    return () => clearInterval(interval);
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
   }, [transferId, totalUsers, serverId, progress, executeCommand]);
 
   const handleStartTransfer = async () => {
@@ -107,13 +137,34 @@ export const ServerTransferSection = () => {
     }
   };
 
-  const handleCancelTransfer = () => {
-    // In a real app, this would call an API to cancel the transfer
-    setIsProcessing(false);
-    setTransferId(null);
-    setProgress(0);
-    setUsersTransferred(0);
-    toast.info("Transfer cancelled");
+  const handleCancelTransfer = async () => {
+    if (transferId) {
+      try {
+        // Update the status in the database
+        const { error } = await supabase
+          .from('transfers')
+          .update({ status: 'cancelled' })
+          .eq('transfer_id', transferId);
+          
+        if (error) {
+          throw error;
+        }
+        
+        setIsProcessing(false);
+        setTransferId(null);
+        setProgress(0);
+        setUsersTransferred(0);
+        toast.info("Transfer cancelled");
+      } catch (error) {
+        console.error('Error cancelling transfer:', error);
+        toast.error('Failed to cancel transfer');
+      }
+    } else {
+      setIsProcessing(false);
+      setProgress(0);
+      setUsersTransferred(0);
+      toast.info("Transfer cancelled");
+    }
   };
 
   return (
