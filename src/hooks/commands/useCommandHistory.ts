@@ -1,6 +1,13 @@
 
 import { useState, useEffect } from 'react';
-import { CommandHistoryEntry } from './types';
+
+export interface CommandHistoryEntry {
+  id: string;
+  command: string;
+  timestamp: Date;
+  success: boolean;
+  result: any;
+}
 
 export const useCommandHistory = () => {
   const [commandHistory, setCommandHistory] = useState<CommandHistoryEntry[]>([]);
@@ -36,8 +43,7 @@ export const useCommandHistory = () => {
       command,
       timestamp: new Date(),
       success,
-      result,
-      favorite: false
+      result
     };
     
     // Add to the beginning of the array (newest first)
@@ -53,25 +59,9 @@ export const useCommandHistory = () => {
     localStorage.removeItem('command-history');
   };
   
-  const toggleFavorite = (id: string) => {
-    setCommandHistory(prev => 
-      prev.map(entry => 
-        entry.id === id 
-          ? { ...entry, favorite: !entry.favorite } 
-          : entry
-      )
-    );
-  };
-  
-  const getFavoriteCommands = () => {
-    return commandHistory.filter(entry => entry.favorite);
-  };
-  
   return {
     commandHistory,
     addCommandToHistory,
-    clearCommandHistory,
-    toggleFavorite,
-    getFavoriteCommands
+    clearCommandHistory
   };
 };

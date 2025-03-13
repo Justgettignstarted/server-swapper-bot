@@ -1,88 +1,83 @@
 
 import React from 'react';
-import { CommandHistoryEntry } from '@/hooks/commands/types';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { CommandHistoryEntry } from '@/hooks/commands/useCommandHistory';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Star } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface CommandHistoryProps {
   history: CommandHistoryEntry[];
   onClearHistory: () => void;
-  onToggleFavorite: (id: string) => void;
-  onCommandClick: (command: string) => Promise<any>;
 }
 
 export const CommandHistory: React.FC<CommandHistoryProps> = ({ 
-  history, 
-  onClearHistory,
-  onToggleFavorite,
-  onCommandClick
+  history,
+  onClearHistory
 }) => {
   if (history.length === 0) {
-    return null;
+    return (
+      <Card className="mt-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-medium">Command History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground text-center py-6">
+            No commands have been executed yet.
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium">Command History</CardTitle>
+    <Card className="mt-6">
+      <CardHeader className="pb-3 flex flex-row items-center justify-between">
+        <CardTitle className="text-lg font-medium">Command History</CardTitle>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onClearHistory}
+          className="text-destructive"
+        >
+          <Trash2 className="h-4 w-4 mr-1" />
+          Clear
+        </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
-          {history.map((entry) => (
-            <div 
-              key={entry.id} 
-              className="flex items-center justify-between p-2 rounded-md hover:bg-secondary/50 group"
-            >
-              <div className="flex-1 overflow-hidden">
-                <div className="font-mono text-sm truncate">{entry.command}</div>
-                <div className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(entry.timestamp), { addSuffix: true })}
+        <ScrollArea className="h-[300px] pr-4">
+          <ul className="space-y-3">
+            {history.map((entry) => (
+              <li key={entry.id} className="border rounded-md p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    {entry.success ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-500" />
+                    )}
+                    <code className="text-sm font-mono bg-muted px-1.5 py-0.5 rounded">
+                      {entry.command}
+                    </code>
+                  </div>
+                  <Badge variant="outline">
+                    {formatDistanceToNow(entry.timestamp, { addSuffix: true })}
+                  </Badge>
                 </div>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Badge variant={entry.success ? "default" : "destructive"}>
-                  {entry.success ? "Success" : "Failed"}
-                </Badge>
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => onCommandClick(entry.command)}
-                    title="Run this command again"
-                  >
-                    <span className="sr-only">Run</span>
-                    <span className="h-4 w-4">▶</span>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => onToggleFavorite(entry.id)}
-                    title={entry.favorite ? "Remove from favorites" : "Add to favorites"}
-                  >
-                    <span className="sr-only">{entry.favorite ? "Unfavorite" : "Favorite"}</span>
-                    <Star className={`h-4 w-4 ${entry.favorite ? "text-yellow-400 fill-yellow-400" : ""}`} />
-                  </Button>
+                <div className="mt-2 text-xs bg-accent/50 p-2 rounded-md overflow-x-auto">
+                  <pre className="whitespace-pre-wrap break-words">
+                    {typeof entry.result === 'object' 
+                      ? JSON.stringify(entry.result, null, 2) 
+                      : String(entry.result)}
+                  </pre>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
+              </li>
+            ))}
+          </ul>
+        </ScrollArea>
       </CardContent>
-      <CardFooter>
-        <Button 
-          variant="destructive" 
-          size="sm" 
-          onClick={onClearHistory} 
-          className="w-full flex items-center gap-1"
-        >
-          <Trash2 className="h-4 w-4" />
-          <span>Clear History</span>
-        </Button>
-      </CardFooter>
     </Card>
   );
 };
