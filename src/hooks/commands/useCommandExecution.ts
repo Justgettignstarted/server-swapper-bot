@@ -16,6 +16,9 @@ import {
   handleSetCommand
 } from './commandHandlers';
 
+// Track active commands to prevent duplicates
+const activeCommands = new Set<string>();
+
 export const useCommandExecution = () => {
   const { executeCommand, isConnected, fetchGuilds } = useBot();
 
@@ -25,10 +28,22 @@ export const useCommandExecution = () => {
       throw new Error("Bot is not connected");
     }
 
+    // Parse the command first to get the base command
+    const { cmd, params } = parseCommand(command);
+    const commandId = `cmd-${cmd}`;
+    
+    // Prevent duplicate command execution
+    if (activeCommands.has(commandId)) {
+      console.log(`Command already in progress: ${cmd}`);
+      return;
+    }
+    
+    // Mark this command as active
+    activeCommands.add(commandId);
+    
     try {
-      toast.loading(`Executing ${command}...`, { id: `cmd-${command.split(' ')[0].replace('-', '')}` });
+      toast.loading(`Executing ${command}...`, { id: commandId });
       
-      const { cmd, params } = parseCommand(command);
       let result;
       
       switch (cmd) {
@@ -73,7 +88,7 @@ export const useCommandExecution = () => {
           if (params.guildId && params.amount !== undefined) {
             result = await handleJoinCommand(executeCommand, params.guildId, params.amount);
           } else {
-            toast.error('Please provide both guild ID and amount: -join <guildId> <amount>', { id: `cmd-${cmd}` });
+            toast.error('Please provide both guild ID and amount: -join <guildId> <amount>', { id: commandId });
             throw new Error('Missing required parameters for join command');
           }
           break;
@@ -82,7 +97,7 @@ export const useCommandExecution = () => {
           if (params.transferId) {
             result = await handleTransferStatusCommand(executeCommand, params.transferId);
           } else {
-            toast.error('Please provide transfer ID: -transferStatus <transferId>', { id: `cmd-${cmd}` });
+            toast.error('Please provide transfer ID: -transferStatus <transferId>', { id: commandId });
             throw new Error('Missing required parameters for transferStatus command');
           }
           break;
@@ -91,21 +106,26 @@ export const useCommandExecution = () => {
           if (params.roleId && params.serverId) {
             result = await handleSetCommand(executeCommand, params.roleId, params.serverId);
           } else {
-            toast.error('Please provide both role ID and server ID: -set <roleId> <serverId>', { id: `cmd-${cmd}` });
+            toast.error('Please provide both role ID and server ID: -set <roleId> <serverId>', { id: commandId });
             throw new Error('Missing required parameters for set command');
           }
           break;
           
         default:
-          toast.info(`For ${command}, please provide the required parameters`, { id: `cmd-${cmd}` });
+          toast.info(`For ${command}, please provide the required parameters`, { id: commandId });
           throw new Error(`Unknown command: ${cmd}`);
       }
       
       return result; // Return the command result
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      toast.error(`Command execution failed: ${errorMessage}`);
+      toast.error(`Command execution failed: ${errorMessage}`, { id: commandId });
       throw error; // Re-throw the error so the caller can handle it
+    } finally {
+      // Remove this command from active commands after completion
+      setTimeout(() => {
+        activeCommands.delete(commandId);
+      }, 1000);
     }
   };
 
