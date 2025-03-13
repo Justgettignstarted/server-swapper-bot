@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -79,19 +78,11 @@ export const DiscordCallback = () => {
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 800));
         
-        // Mock user data - in a real implementation, this would come from the Discord API
+        // Store COMPLETE Discord user data to localStorage
         const userData = mockDiscordUserResponse;
         
-        // Store the user data in localStorage
+        // Store the complete user data in localStorage
         localStorage.setItem('discordUser', JSON.stringify(userData));
-        
-        // Format username for display
-        const formattedUsername = userData.global_name || 
-          (userData.discriminator !== '0' 
-            ? `${userData.username}#${userData.discriminator}` 
-            : userData.username);
-        
-        localStorage.setItem('username', formattedUsername);
         
         setStatus('success');
         setMessage(`Welcome, ${userData.global_name || userData.username}!`);

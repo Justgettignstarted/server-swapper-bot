@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Hero } from '@/components/Hero';
 import { Dashboard } from '@/components/Dashboard';
 import { AnimatePresence, motion } from 'framer-motion';
 import { checkPremiumStatus, getPremiumTier } from '@/components/premium/PaymentService';
 import { toast } from 'sonner';
-import { getDiscordUser, clearDiscordAuth } from '@/utils/auth/discordAuth';
+import { getDiscordUser, clearDiscordAuth, formatDiscordUsername } from '@/utils/auth/discordAuth';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -17,14 +16,12 @@ const Index = () => {
     // Get Discord user from localStorage
     const discordUser = getDiscordUser();
     if (discordUser) {
-      // Format username with discriminator if available
-      const formattedUsername = discordUser.discriminator && discordUser.discriminator !== '0' 
-        ? `${discordUser.username}#${discordUser.discriminator}` 
-        : discordUser.username;
+      // Get formatted username using the utility function
+      const displayName = formatDiscordUsername(discordUser);
       
-      setUsername(formattedUsername);
+      setUsername(displayName);
       setIsAuthenticated(true);
-      toast.success(`Welcome back, ${discordUser.username}!`);
+      toast.success(`Welcome back, ${discordUser.global_name || discordUser.username}!`);
     }
     
     // Get premium status and tier from localStorage
@@ -42,16 +39,14 @@ const Index = () => {
     // The actual redirect to Discord happens in the DiscordLoginButton component
     const discordUser = getDiscordUser();
     if (discordUser) {
-      // Format username with discriminator if available
-      const formattedUsername = discordUser.discriminator && discordUser.discriminator !== '0' 
-        ? `${discordUser.username}#${discordUser.discriminator}` 
-        : discordUser.username;
+      // Get formatted username using the utility function
+      const displayName = formatDiscordUsername(discordUser);
       
-      setUsername(formattedUsername);
+      setUsername(displayName);
       setIsAuthenticated(true);
       
       // Welcome toast with the username
-      toast.success(`Welcome, ${discordUser.username}!`);
+      toast.success(`Welcome, ${discordUser.global_name || discordUser.username}!`);
     }
     
     // Check premium status on login

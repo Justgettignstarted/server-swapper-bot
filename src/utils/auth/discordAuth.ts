@@ -60,6 +60,7 @@ export const formatDiscordUsername = (user: DiscordUser | null): string => {
   
   // New Discord usernames use global_name as display name
   if (user.global_name) {
+    // For display purposes, return the global_name
     return user.global_name;
   }
   
@@ -76,7 +77,6 @@ export const formatDiscordUsername = (user: DiscordUser | null): string => {
  */
 export const clearDiscordAuth = (): void => {
   localStorage.removeItem('discordUser');
-  localStorage.removeItem('username');
   localStorage.removeItem('discordOAuthState');
 };
 

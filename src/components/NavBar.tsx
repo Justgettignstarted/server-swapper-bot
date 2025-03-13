@@ -15,7 +15,8 @@ import {
   getDiscordUser,
   getDiscordAvatarUrl,
   getDiscordBannerUrl,
-  getDiscordPremiumBadge
+  getDiscordPremiumBadge,
+  formatDiscordUsername
 } from '@/utils/auth/discordAuth';
 
 interface NavBarProps {
@@ -61,6 +62,9 @@ export const NavBar: React.FC<NavBarProps> = ({
   const avatarUrl = getDiscordAvatarUrl(discordUser);
   const bannerUrl = getDiscordBannerUrl(discordUser);
   const nitroStatus = getDiscordPremiumBadge(discordUser);
+  
+  // Get the formatted display name instead of using the passed username prop
+  const displayUsername = discordUser ? formatDiscordUsername(discordUser) : username;
 
   // Split the Discord username for display
   const formatDiscordUsernameDisplay = (discordName: string | undefined) => {
@@ -100,17 +104,17 @@ export const NavBar: React.FC<NavBarProps> = ({
       </div>
       
       <div className="flex items-center gap-4">
-        {isAuthorized && username && (
+        {isAuthorized && (
           <HoverCard>
             <HoverCardTrigger asChild>
               <div className="flex items-center gap-2 bg-discord-darker/30 px-3 py-1.5 rounded-md cursor-pointer">
                 <Avatar className="h-7 w-7 border-2 border-discord-blurple/30">
-                  <AvatarImage src={avatarUrl} alt={username} />
+                  <AvatarImage src={avatarUrl} alt={displayUsername || 'User'} />
                   <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
                 </Avatar>
                 
                 <div className="flex items-center">
-                  {formatDiscordUsernameDisplay(username)}
+                  {formatDiscordUsernameDisplay(displayUsername)}
                 </div>
                 
                 {isPremium && (
@@ -138,15 +142,15 @@ export const NavBar: React.FC<NavBarProps> = ({
                 <div className={`p-4 ${bannerUrl ? 'pt-2' : ''}`}>
                   <div className="flex items-start gap-3">
                     <Avatar className={`h-16 w-16 border-4 border-discord-darker ${bannerUrl ? '-mt-8' : ''}`}>
-                      <AvatarImage src={avatarUrl} alt={username} />
+                      <AvatarImage src={avatarUrl} alt={displayUsername || 'User'} />
                       <AvatarFallback><User className="h-6 w-6" /></AvatarFallback>
                     </Avatar>
                     
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="text-lg font-bold">{discordUser?.global_name || discordUser?.username}</h3>
-                          {discordUser?.global_name && (
+                          <h3 className="text-lg font-bold">{discordUser?.global_name || discordUser?.username || 'Discord User'}</h3>
+                          {discordUser?.global_name && discordUser?.username && (
                             <p className="text-xs text-gray-400">@{discordUser?.username}</p>
                           )}
                         </div>
