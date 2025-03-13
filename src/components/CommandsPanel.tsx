@@ -3,7 +3,7 @@ import React from 'react';
 import { CommandList } from '@/components/commands/CommandList';
 import { RecentTransfers } from '@/components/commands/RecentTransfers';
 import { commands } from '@/data/commandsData';
-import { useCommandExecution } from '@/hooks/useCommandExecution';
+import { useCommandExecution } from '@/hooks/commands'; // Updated import path
 import { useRecentTransfers } from '@/hooks/useRecentTransfers';
 
 export const CommandsPanel = () => {
