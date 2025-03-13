@@ -11,7 +11,6 @@ interface DiscordLoginButtonProps {
 }
 
 // Discord Client ID from environment variable
-// Value: 1349215809288929290
 const DEFAULT_DISCORD_CLIENT_ID = '1349215809288929290';
 
 export const DiscordLoginButton: React.FC<DiscordLoginButtonProps> = ({
@@ -27,28 +26,16 @@ export const DiscordLoginButton: React.FC<DiscordLoginButtonProps> = ({
       // Get the client ID from environment variables or use the default
       const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID || DEFAULT_DISCORD_CLIENT_ID;
       
-      // Create a fixed redirect URI format that will match what you've registered in Discord
-      // For Lovable projects, the URL will be something like:
-      // https://your-project-id.lovableproject.com/auth/callback
-      
-      // For local development, it will be:
-      // http://localhost:8080/auth/callback (note the port is 8080 for Vite in this project)
-      let redirectUri;
-      
-      if (window.location.hostname === 'localhost') {
-        // Use port 8080 for local development with Vite
-        redirectUri = 'http://localhost:8080/auth/callback';
-      } else {
-        // For production environments - ensure this matches what's registered in Discord
-        redirectUri = `${window.location.protocol}//${window.location.host}/auth/callback`;
-      }
+      // IMPORTANT: This exact redirect URI must be configured in the Discord Developer Portal
+      // No trailing slash, consistent across all environments
+      const redirectUri = 'http://localhost:8080/auth/callback';
       
       // Log the redirect URI to help with debugging
       console.log("Discord OAuth Redirect URI:", redirectUri);
       
       const encodedRedirectUri = encodeURIComponent(redirectUri);
       
-      // Using a simplified scope list - just the essentials
+      // Using a simplified scope list
       const scope = encodeURIComponent('identify email guilds');
       
       const state = crypto.randomUUID(); // Generate a random state for security
@@ -66,8 +53,6 @@ export const DiscordLoginButton: React.FC<DiscordLoginButtonProps> = ({
       setIsLoading(false);
       toast.error("Failed to connect to Discord. Please try again.");
     }
-    
-    // The onLogin callback will be called in the callback route, not here
   };
   
   return (
