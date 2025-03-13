@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useBot } from '@/context/BotContext';
 import { motion } from 'framer-motion';
-import { Shield, ShieldAlert, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Shield, ShieldAlert, ShieldCheck, AlertCircle, Info } from 'lucide-react';
 import { toast } from 'sonner';
+import { validateTokenFormat } from '@/utils/discord/api/base';
 
 export const BotSetup = () => {
   const { token, setToken, status, checkConnection, connecting } = useBot();
@@ -28,10 +29,9 @@ export const BotSetup = () => {
       return false;
     }
 
-    // Simple validation - Discord bot tokens usually follow a specific format
-    // Note: This is a basic check, not foolproof
-    if (!token.includes('.')) {
-      setValidationMessage('Token appears to be invalid (should contain periods)');
+    // Use the more comprehensive validation from our utility
+    if (!validateTokenFormat(token)) {
+      setValidationMessage('Invalid token format. Discord bot tokens contain two periods (.)');
       return false;
     }
 
@@ -122,9 +122,20 @@ export const BotSetup = () => {
                 {validationMessage}
               </div>
             )}
-            <p className="text-xs text-muted-foreground mt-1">
-              Never share your bot token. It provides full access to your bot.
-            </p>
+            <div className="text-xs flex items-start gap-1 mt-1 text-muted-foreground">
+              <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+              <div>
+                <p>Never share your bot token. It provides full access to your bot.</p>
+                <p className="mt-1">To get a bot token:</p>
+                <ol className="list-decimal ml-4 mt-1">
+                  <li>Go to the <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Discord Developer Portal</a></li>
+                  <li>Create a New Application</li>
+                  <li>Go to the Bot tab and click "Add Bot"</li>
+                  <li>Click "Reset Token" to view your token</li>
+                  <li>Make sure your bot has the necessary intents enabled (Message Content, Server Members, etc.)</li>
+                </ol>
+              </div>
+            </div>
           </div>
           
           {status.status === 'connected' && (
@@ -135,6 +146,12 @@ export const BotSetup = () => {
                   Connected to Discord API
                 </span>
               </div>
+              {status.botInfo && (
+                <div className="mt-2 text-xs">
+                  <p><strong>Bot Name:</strong> {status.botInfo.username}#{status.botInfo.discriminator || '0'}</p>
+                  {status.botInfo.id && <p><strong>Bot ID:</strong> {status.botInfo.id}</p>}
+                </div>
+              )}
             </div>
           )}
           
@@ -155,7 +172,7 @@ export const BotSetup = () => {
                   <ul className="list-disc ml-5 mt-1">
                     <li>Your bot token is correct</li>
                     <li>The bot is online and not disabled</li>
-                    <li>The bot has the necessary permissions</li>
+                    <li>The bot has the necessary permissions and intents</li>
                   </ul>
                 </div>
               </div>
