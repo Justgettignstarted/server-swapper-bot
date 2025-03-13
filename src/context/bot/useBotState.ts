@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { BotStatus } from '@/utils/discord/types';
 import { checkBotStatus } from '@/utils/discord';
 import { toast } from 'sonner';
@@ -17,6 +17,8 @@ export const useBotState = () => {
   });
   
   const [connecting, setConnecting] = useState(false);
+  const checkInProgress = useRef(false);
+  const initialCheckDone = useRef(false);
 
   const setToken = (newToken: string) => {
     if (!newToken.trim()) {
@@ -39,6 +41,13 @@ export const useBotState = () => {
       return;
     }
     
+    // Prevent multiple simultaneous checks
+    if (checkInProgress.current) {
+      console.log("Connection check already in progress, skipping");
+      return;
+    }
+    
+    checkInProgress.current = true;
     setConnecting(true);
     setStatus(prev => ({ ...prev, status: 'connecting' }));
     
@@ -48,7 +57,11 @@ export const useBotState = () => {
       setStatus(newStatus);
       
       if (newStatus.status === 'connected') {
-        toast.success('Bot is online and operational');
+        // Only show toast for manual checks or first successful connection
+        if (!initialCheckDone.current) {
+          toast.success('Bot is online and operational');
+          initialCheckDone.current = true;
+        }
       } else if (newStatus.status === 'error') {
         toast.error(`Bot connection error: ${newStatus.error || 'Unknown error'}`);
       }
@@ -63,12 +76,13 @@ export const useBotState = () => {
       toast.error(`Failed to check bot status: ${errorMessage}`);
     } finally {
       setConnecting(false);
+      checkInProgress.current = false;
     }
   };
 
-  // Set up automatic connection checking
+  // Initial connection check when token is available
   useEffect(() => {
-    if (token) {
+    if (token && !initialCheckDone.current) {
       // Add a small delay to prevent immediate connection check on initial load
       const timer = setTimeout(() => {
         checkConnection();
@@ -76,14 +90,28 @@ export const useBotState = () => {
       
       return () => clearTimeout(timer);
     }
+  }, [token]);
     
-    // Set up periodic checks if connected (every 5 minutes)
+  // Set up periodic checks if connected
+  useEffect(() => {
     let interval: NodeJS.Timeout | undefined;
+    
     if (status.status === 'connected' && token) {
-      interval = setInterval(checkConnection, 5 * 60 * 1000);
+      console.log("Setting up periodic connection checks");
+      interval = setInterval(() => {
+        console.log("Running periodic connection check");
+        // For periodic checks, we'll use a quieter version that doesn't show success toasts
+        if (!checkInProgress.current) {
+          checkConnection();
+        }
+      }, 5 * 60 * 1000); // Check every 5 minutes
     }
+    
     return () => {
-      if (interval) clearInterval(interval);
+      if (interval) {
+        console.log("Clearing periodic connection checks");
+        clearInterval(interval);
+      }
     };
   }, [token, status.status]);
 
