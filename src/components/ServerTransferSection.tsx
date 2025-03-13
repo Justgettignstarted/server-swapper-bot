@@ -1,171 +1,25 @@
-
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { useBot } from '@/context/BotContext';
-import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Users, Server } from 'lucide-react';
-import { supabase } from "@/integrations/supabase/client";
+import { TransferForm } from './transfer/TransferForm';
+import { TransferProgress } from './transfer/TransferProgress';
+import { useServerTransfer } from '@/hooks/useServerTransfer';
 
 export const ServerTransferSection = () => {
-  const [serverId, setServerId] = useState('');
-  const [amount, setAmount] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [usersTransferred, setUsersTransferred] = useState(0);
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [transferId, setTransferId] = useState<string | null>(null);
-  const [targetServer, setTargetServer] = useState<{id: string, name: string} | null>(null);
-  
-  const { executeCommand, isConnected } = useBot();
-
-  // Check transfer status periodically if a transfer is active
-  useEffect(() => {
-    if (!transferId || progress >= 100) return;
-    
-    // Subscribe to real-time updates
-    const channel = supabase
-      .channel(`transfer-${transferId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'transfers',
-          filter: `transfer_id=eq.${transferId}`
-        },
-        payload => {
-          if (payload.new) {
-            const transfer = payload.new as any;
-            setProgress(transfer.progress);
-            setUsersTransferred(transfer.users_processed);
-            
-            if (transfer.status === 'completed') {
-              toast.success(`Successfully transferred ${transfer.amount} users to server ${transfer.guild_name}`);
-            }
-          }
-        }
-      )
-      .subscribe();
-    
-    // As a backup, still poll for updates every 5 seconds in case realtime fails
-    const interval = setInterval(async () => {
-      try {
-        const statusResponse = await executeCommand('transferStatus', { transferId });
-        if (statusResponse.progress) {
-          setProgress(statusResponse.progress);
-          setUsersTransferred(statusResponse.usersProcessed);
-          
-          if (statusResponse.status === 'completed') {
-            toast.success(`Successfully transferred ${totalUsers} users to server ${serverId}`);
-            clearInterval(interval);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to check transfer status:", error);
-      }
-    }, 5000);
-    
-    return () => {
-      supabase.removeChannel(channel);
-      clearInterval(interval);
-    };
-  }, [transferId, totalUsers, serverId, progress, executeCommand]);
-
-  const handleStartTransfer = async () => {
-    if (!serverId) {
-      toast.error("Please enter a server ID");
-      return;
-    }
-    
-    if (!amount || isNaN(parseInt(amount)) || parseInt(amount) <= 0) {
-      toast.error("Please enter a valid amount greater than 0");
-      return;
-    }
-    
-    if (!isConnected) {
-      toast.error("Bot is not connected. Please try again later.");
-      return;
-    }
-    
-    setIsProcessing(true);
-    setProgress(0);
-    setUsersTransferred(0);
-    setTotalUsers(parseInt(amount));
-    
-    try {
-      // Execute the join command via the bot
-      const response = await executeCommand('join', { 
-        gid: serverId, 
-        amt: parseInt(amount) 
-      });
-      
-      // Set transfer ID for status tracking
-      setTransferId(response.transferId);
-      
-      // Set target server info if available
-      if (response.guild) {
-        setTargetServer(response.guild);
-      }
-      
-      toast.success(`Starting transfer to server ${response.guild?.name || serverId}`);
-      
-      // Set initial progress based on the first batch
-      const initialProgress = Math.floor((response.initialBatch / parseInt(amount)) * 100);
-      setProgress(initialProgress);
-      setUsersTransferred(response.initialBatch);
-      
-      // If all users were transferred in the initial batch, mark as complete
-      if (response.remainingUsers === 0) {
-        setTimeout(() => {
-          setProgress(100);
-          setUsersTransferred(parseInt(amount));
-          setIsProcessing(false);
-          toast.success(`Successfully transferred ${amount} users to server ${response.guild?.name || serverId}`);
-        }, 1000);
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      toast.error(`Failed to start transfer: ${errorMessage}`);
-      setIsProcessing(false);
-      setTransferId(null);
-    }
-  };
-
-  const handleCancelTransfer = async () => {
-    if (transferId) {
-      try {
-        // Update the status in the database
-        const { error } = await supabase
-          .from('transfers')
-          .update({ status: 'cancelled' })
-          .eq('transfer_id', transferId);
-          
-        if (error) {
-          throw error;
-        }
-        
-        setIsProcessing(false);
-        setTransferId(null);
-        setProgress(0);
-        setUsersTransferred(0);
-        toast.info("Transfer cancelled");
-      } catch (error) {
-        console.error('Error cancelling transfer:', error);
-        toast.error('Failed to cancel transfer');
-      }
-    } else {
-      setIsProcessing(false);
-      setProgress(0);
-      setUsersTransferred(0);
-      toast.info("Transfer cancelled");
-    }
-  };
+  const {
+    serverId,
+    setServerId,
+    amount,
+    setAmount,
+    isProcessing,
+    progress,
+    usersTransferred,
+    totalUsers,
+    transferId,
+    targetServer,
+    handleStartTransfer,
+    handleCancelTransfer
+  } = useServerTransfer();
 
   return (
     <motion.div
@@ -181,87 +35,28 @@ export const ServerTransferSection = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="server-id">Destination Server ID</Label>
-            <Input
-              id="server-id"
-              placeholder="Enter server ID"
-              value={serverId}
-              onChange={(e) => setServerId(e.target.value)}
-              className="bg-secondary/50 border-secondary"
-              disabled={isProcessing}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="amount">Number of Users to Transfer</Label>
-            <Input
-              id="amount"
-              placeholder="Enter amount"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="bg-secondary/50 border-secondary"
-              disabled={isProcessing}
-              type="number"
-              min="1"
-            />
-          </div>
+          <TransferForm
+            serverId={serverId}
+            setServerId={setServerId}
+            amount={amount}
+            setAmount={setAmount}
+            isProcessing={isProcessing}
+            onStartTransfer={handleStartTransfer}
+          />
           
           {isProcessing && (
-            <div className="space-y-3 mt-4">
-              {targetServer && (
-                <div className="flex items-center gap-2">
-                  <Server className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Target server: </span>
-                  <Badge variant="outline">{targetServer.name}</Badge>
-                </div>
-              )}
-              
-              {transferId && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Transfer ID: {transferId}</span>
-                </div>
-              )}
-              
-              <div className="flex justify-between text-sm">
-                <div className="flex items-center gap-1">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>Transfer Progress</span>
-                </div>
-                <span>{usersTransferred} / {totalUsers} users</span>
-              </div>
-              
-              <Progress value={progress} className="h-2" />
-              
-              <div className="flex items-center gap-2 text-xs">
-                <RefreshCw className={`h-3 w-3 ${progress < 100 ? 'animate-spin' : ''}`} />
-                <span>
-                  {progress < 100 
-                    ? `Transferring users... (${progress}%)`
-                    : 'Transfer complete!'}
-                </span>
-              </div>
-            </div>
+            <TransferProgress
+              progress={progress}
+              usersTransferred={usersTransferred}
+              totalUsers={totalUsers}
+              targetServer={targetServer}
+              transferId={transferId}
+              onCancelTransfer={handleCancelTransfer}
+            />
           )}
         </CardContent>
         <CardFooter>
-          {!isProcessing ? (
-            <Button 
-              onClick={handleStartTransfer} 
-              disabled={isProcessing || !isConnected} 
-              className="w-full bg-discord-blurple hover:bg-discord-blurple/90 btn-shine"
-            >
-              Start Transfer
-            </Button>
-          ) : (
-            <Button 
-              onClick={handleCancelTransfer}
-              variant="destructive"
-              className="w-full"
-              disabled={progress >= 100}
-            >
-              {progress >= 100 ? 'Transfer Complete' : 'Cancel Transfer'}
-            </Button>
-          )}
+          {/* Footer is now handled in the respective component */}
         </CardFooter>
       </Card>
     </motion.div>
