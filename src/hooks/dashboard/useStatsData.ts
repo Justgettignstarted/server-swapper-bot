@@ -12,7 +12,8 @@ export const useStatsData = () => {
       return guilds.length.toString();
     } catch (error) {
       console.error('Error fetching servers:', error);
-      toast.error('Failed to fetch server count');
+      // Use a consistent toast ID to prevent duplicate notifications
+      toast.error('Failed to fetch server count', { id: 'server-count-error' });
       return '0';
     }
   };
@@ -26,7 +27,7 @@ export const useStatsData = () => {
       return '0';
     } catch (error) {
       console.error('Error fetching authorized users:', error);
-      toast.error('Failed to fetch user count');
+      toast.error('Failed to fetch user count', { id: 'user-count-error' });
       return '0';
     }
   };
@@ -84,6 +85,8 @@ export const useStatsData = () => {
       return { transfers: '0', verificationRate: '0%' };
     } catch (error) {
       console.error('Error fetching transfer progress via command:', error);
+      // Use consistent toast ID to prevent duplicates
+      toast.error('Failed to fetch transfer stats', { id: 'transfer-stats-error' });
       return { transfers: '0', verificationRate: '0%' };
     }
   };

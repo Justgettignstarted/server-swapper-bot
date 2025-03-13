@@ -6,6 +6,9 @@ import { CommandResult } from '@/hooks/commands/types';
 const recentMessages = new Map<string, number>();
 const SPAM_PREVENTION_TIMEOUT = 5000; // 5 seconds between identical messages
 
+// Track message sending operations in progress
+const sendingOperations = new Set<string>();
+
 /**
  * Helper function to send a message to a channel with spam prevention
  */
@@ -27,6 +30,19 @@ export const sendChannelMessage = async (token: string, channelId: string, conte
       };
     }
   }
+  
+  // Check if we're already sending this message
+  if (sendingOperations.has(messageKey)) {
+    console.log(`Message send operation already in progress for channel ${channelId}: "${content}"`);
+    return {
+      success: false,
+      error: 'Message sending already in progress',
+      message: 'A similar message is already being sent'
+    };
+  }
+  
+  // Mark this message as being sent
+  sendingOperations.add(messageKey);
   
   try {
     // Update the spam prevention map
@@ -63,5 +79,8 @@ export const sendChannelMessage = async (token: string, channelId: string, conte
       error: errorMessage,
       message: 'Failed to send message'
     };
+  } finally {
+    // Remove this message from the sending operations
+    sendingOperations.delete(messageKey);
   }
 };

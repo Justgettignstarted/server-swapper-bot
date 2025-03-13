@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { useBot } from '@/context/BotContext';
 import { parseCommand } from './commandParser';
@@ -18,6 +17,9 @@ import {
 
 // Track active commands to prevent duplicates
 const activeCommands = new Set<string>();
+// Store last execution time to prevent rapid fires
+const lastExecutionTimes = new Map<string, number>();
+const EXECUTION_COOLDOWN = 2000; // 2 seconds cooldown between same command executions
 
 export const useCommandExecution = () => {
   const { executeCommand, isConnected, fetchGuilds } = useBot();
@@ -30,7 +32,15 @@ export const useCommandExecution = () => {
 
     // Parse the command first to get the base command
     const { cmd, params } = parseCommand(command);
-    const commandId = `cmd-${cmd}`;
+    const commandId = `cmd-${cmd}-${JSON.stringify(params)}`;
+    
+    // Check for cooldown to prevent rapid fire of the same command
+    const now = Date.now();
+    const lastExecution = lastExecutionTimes.get(commandId) || 0;
+    if (now - lastExecution < EXECUTION_COOLDOWN) {
+      console.log(`Command ${cmd} executed too quickly, ignoring duplicate`);
+      return;
+    }
     
     // Prevent duplicate command execution
     if (activeCommands.has(commandId)) {
@@ -38,8 +48,9 @@ export const useCommandExecution = () => {
       return;
     }
     
-    // Mark this command as active
+    // Mark this command as active and update last execution time
     activeCommands.add(commandId);
+    lastExecutionTimes.set(commandId, now);
     
     try {
       toast.loading(`Executing ${command}...`, { id: commandId });
@@ -115,6 +126,9 @@ export const useCommandExecution = () => {
           toast.info(`For ${command}, please provide the required parameters`, { id: commandId });
           throw new Error(`Unknown command: ${cmd}`);
       }
+      
+      // Display success toast only once
+      toast.success(`Command ${cmd} executed successfully`, { id: commandId });
       
       return result; // Return the command result
     } catch (error) {
