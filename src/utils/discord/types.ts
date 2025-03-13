@@ -10,6 +10,7 @@ export interface BotStatus {
   status: BotConnectionStatus;
   error: string | null;
   lastChecked: Date | null;
+  botInfo?: any; // Add the optional botInfo property
 }
 
 export interface DiscordGuild {
