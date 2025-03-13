@@ -3,12 +3,14 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useBot } from '@/context/BotContext';
 
 export const DiscordCallback = () => {
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
+  const { setToken, checkConnection } = useBot();
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
@@ -71,6 +73,16 @@ export const DiscordCallback = () => {
         // Store the user data
         localStorage.setItem('discordUser', JSON.stringify(mockDiscordUserData));
         
+        // Also set a mock bot token for demonstration purposes
+        // In a real app, you would get this token from your Discord bot application
+        const demoToken = "MTMwMDUwNTAyMTUwMjE5Mzc5NQ.GjoPO0.ZLojCfl8IpUJUYmnBxD0EtAokqWcjGh28j3XqE";
+        setToken(demoToken);
+        
+        // Check the bot connection with the token
+        setTimeout(() => {
+          checkConnection();
+        }, 500);
+        
         toast.success(`Successfully authenticated with Discord!`);
         setProcessing(false);
         
@@ -92,7 +104,7 @@ export const DiscordCallback = () => {
     };
 
     handleOAuthCallback();
-  }, [location, navigate]);
+  }, [location, navigate, setToken, checkConnection]);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-b from-gray-900 to-black">

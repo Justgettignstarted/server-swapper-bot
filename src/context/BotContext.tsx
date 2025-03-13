@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { 
   checkBotStatus, 
@@ -42,6 +41,16 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
   const [connecting, setConnecting] = useState(false);
 
   const setToken = (newToken: string) => {
+    if (!newToken.trim()) {
+      localStorage.removeItem(storageKey);
+      setTokenState(null);
+      setStatus({
+        status: 'disconnected',
+        error: null,
+        lastChecked: new Date()
+      });
+      return;
+    }
     localStorage.setItem(storageKey, newToken);
     setTokenState(newToken);
   };
@@ -53,7 +62,10 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
     }
     
     setConnecting(true);
+    setStatus(prev => ({ ...prev, status: 'connecting' }));
+    
     try {
+      console.log("Checking bot connection with token:", token ? `${token.substring(0, 10)}...` : 'none');
       const newStatus = await checkBotStatus(token);
       setStatus(newStatus);
       
@@ -63,7 +75,14 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
         toast.error(`Bot connection error: ${newStatus.error}`);
       }
     } catch (error) {
-      toast.error('Failed to check bot status');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error("Bot connection check failed:", errorMessage);
+      setStatus({
+        status: 'error',
+        error: errorMessage,
+        lastChecked: new Date()
+      });
+      toast.error(`Failed to check bot status: ${errorMessage}`);
     } finally {
       setConnecting(false);
     }
@@ -155,7 +174,7 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [token, status.status]);
+  }, [token]);
 
   return (
     <BotContext.Provider
@@ -166,11 +185,72 @@ export const BotProvider = ({ children }: { children: ReactNode }) => {
         token,
         setToken,
         checkConnection,
-        executeCommand,
-        fetchGuilds: fetchGuildsWrapper,
-        fetchChannels: fetchChannelsWrapper,
-        fetchRoles: fetchRolesWrapper,
-        fetchMembers: fetchMembersWrapper
+        executeCommand: async (command, params) => {
+          if (!token) {
+            toast.error('Please enter a bot token first');
+            throw new Error('No bot token provided');
+          }
+          
+          try {
+            return await sendBotCommand(token, command, params);
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            toast.error(`Command error: ${errorMessage}`);
+            throw error;
+          }
+        },
+        fetchGuilds: async () => {
+          if (!token) {
+            toast.error('Please enter a bot token first');
+            throw new Error('No bot token provided');
+          }
+          try {
+            return await fetchGuilds(token);
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            toast.error(`Failed to fetch guilds: ${errorMessage}`);
+            throw error;
+          }
+        },
+        fetchChannels: async (guildId) => {
+          if (!token) {
+            toast.error('Please enter a bot token first');
+            throw new Error('No bot token provided');
+          }
+          try {
+            return await fetchChannels(token, guildId);
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            toast.error(`Failed to fetch channels: ${errorMessage}`);
+            throw error;
+          }
+        },
+        fetchRoles: async (guildId) => {
+          if (!token) {
+            toast.error('Please enter a bot token first');
+            throw new Error('No bot token provided');
+          }
+          try {
+            return await fetchRoles(token, guildId);
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            toast.error(`Failed to fetch roles: ${errorMessage}`);
+            throw error;
+          }
+        },
+        fetchMembers: async (guildId, limit) => {
+          if (!token) {
+            toast.error('Please enter a bot token first');
+            throw new Error('No bot token provided');
+          }
+          try {
+            return await fetchMembers(token, guildId, limit);
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            toast.error(`Failed to fetch members: ${errorMessage}`);
+            throw error;
+          }
+        }
       }}
     >
       {children}
