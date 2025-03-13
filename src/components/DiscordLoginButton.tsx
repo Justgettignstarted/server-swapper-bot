@@ -35,8 +35,12 @@ export const DiscordLoginButton: React.FC<DiscordLoginButtonProps> = ({
       
       const encodedRedirectUri = encodeURIComponent(redirectUri);
       
-      // Using a simplified scope list
-      const scope = encodeURIComponent('identify email guilds');
+      // Updated scope list with only what's necessary for the application
+      // identify: Basic user info
+      // guilds: View user's servers
+      // guilds.members.read: View members in servers
+      // guilds.join: Add users to guilds (for transfer functionality)
+      const scope = encodeURIComponent('identify guilds guilds.members.read guilds.join');
       
       const state = crypto.randomUUID(); // Generate a random state for security
       
