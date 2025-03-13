@@ -16,6 +16,7 @@ import {
   fetchMembers
 } from './api';
 
+// Import from the new location
 import { sendBotCommand } from './commands';
 
 // Re-export all the types with 'export type' syntax
