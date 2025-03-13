@@ -3,7 +3,6 @@ import React from 'react';
 import { CommandHistoryEntry } from '@/hooks/commands/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Star, Play } from 'lucide-react';
 
 interface FavoriteCommandsProps {
@@ -17,7 +16,8 @@ export const FavoriteCommands: React.FC<FavoriteCommandsProps> = ({
   onCommandClick, 
   onToggleFavorite
 }) => {
-  if (favorites.length === 0) {
+  // Only render the component if there are favorites
+  if (!favorites || favorites.length === 0) {
     return null;
   }
 
@@ -42,6 +42,7 @@ export const FavoriteCommands: React.FC<FavoriteCommandsProps> = ({
                   variant="ghost" 
                   size="sm" 
                   onClick={() => onCommandClick(favorite.command)}
+                  title="Run command"
                 >
                   <Play className="h-4 w-4" />
                 </Button>
@@ -49,6 +50,7 @@ export const FavoriteCommands: React.FC<FavoriteCommandsProps> = ({
                   variant="ghost" 
                   size="sm" 
                   onClick={() => onToggleFavorite(favorite.id)}
+                  title="Remove from favorites"
                 >
                   <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
                 </Button>

@@ -21,3 +21,11 @@ export interface CommandHistoryEntry {
   result: any;
   favorite?: boolean;
 }
+
+// Add a helper type for better type safety with command results
+export type CommandResult<T = any> = {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+};

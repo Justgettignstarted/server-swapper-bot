@@ -50,7 +50,7 @@ export const useBotState = () => {
       if (newStatus.status === 'connected') {
         toast.success('Bot is online and operational');
       } else if (newStatus.status === 'error') {
-        toast.error(`Bot connection error: ${newStatus.error}`);
+        toast.error(`Bot connection error: ${newStatus.error || 'Unknown error'}`);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -69,7 +69,12 @@ export const useBotState = () => {
   // Set up automatic connection checking
   useEffect(() => {
     if (token) {
-      checkConnection();
+      // Add a small delay to prevent immediate connection check on initial load
+      const timer = setTimeout(() => {
+        checkConnection();
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
     
     // Set up periodic checks if connected (every 5 minutes)
@@ -80,7 +85,7 @@ export const useBotState = () => {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [token]);
+  }, [token, status.status]);
 
   return {
     token,
