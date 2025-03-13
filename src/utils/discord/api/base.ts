@@ -21,14 +21,20 @@ export const rateLimitAwareFetch = async (endpoint: string, options: RequestInit
     await new Promise(resolve => setTimeout(resolve, (waitTime * 1000) + 100));
   }
   
+  // Add some logging to help with debugging
+  console.log(`Making API request to: ${endpoint}`);
+  
   const response = await fetch(endpoint, options);
+  
+  // Log the response status for debugging
+  console.log(`Response from ${endpoint}: ${response.status}`);
   
   // Handle rate limiting
   if (response.status === 429) {
     const retryAfter = response.headers.get('retry-after');
     const waitSeconds = retryAfter ? parseInt(retryAfter, 10) : 1;
     
-    console.log(`Rate limited by Discord API for ${waitSeconds}s on ${endpoint}`);
+    console.warn(`Rate limited by Discord API for ${waitSeconds}s on ${endpoint}`);
     
     // Store when this endpoint's rate limit will expire
     rateLimitedEndpoints[endpoint] = now + (waitSeconds * 1000);
@@ -36,6 +42,23 @@ export const rateLimitAwareFetch = async (endpoint: string, options: RequestInit
     // Wait and retry
     await new Promise(resolve => setTimeout(resolve, waitSeconds * 1000 + 100));
     return rateLimitAwareFetch(endpoint, options);
+  }
+  
+  // Check for common API errors
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    console.error(`Discord API error (${response.status}):`, errorData);
+    
+    // For debugging purposes, log the full request details
+    console.error('Request details:', {
+      endpoint,
+      method: options.method,
+      headers: options.headers,
+      body: options.body ? '(request had body)' : undefined
+    });
+    
+    // Throw a detailed error
+    throw new Error(`Discord API error (${response.status}): ${errorData?.message || response.statusText}`);
   }
   
   return response;

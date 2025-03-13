@@ -75,43 +75,23 @@ export const DiscordCallback = () => {
           return;
         }
 
-        // In a production application, you would exchange this code for a token via a backend
+        // In a production app, you would exchange the code for a token via a backend
+        // Here we're just going to use our pre-configured bot token for demo purposes
         console.log('Received valid Discord OAuth code:', code.substring(0, 6) + "...");
         
-        // Simulate successful authentication with mock data
-        // In a real app, this would come from Discord's API response after token exchange
-        const mockDiscordUserData = {
-          id: '123456789012345678',
-          username: 'DiscordUser',
-          discriminator: '1234',
-          avatar: null,
-          email: 'user@example.com'
-        };
-        
-        // Store the user data
-        localStorage.setItem('discordUser', JSON.stringify(mockDiscordUserData));
-        
-        // Also set a mock bot token for demonstration purposes
-        // In a real app, you would get this token from your Discord bot application
-        const demoToken = "MTMwMDUwNTAyMTUwMjE5Mzc5NQ.GjoPO0.ZLojCfl8IpUJUYmnBxD0EtAokqWcjGh28j3XqE";
-        setToken(demoToken);
-        
-        // Check the bot connection with the token
-        setTimeout(() => {
-          checkConnection();
-        }, 500);
-        
-        toast.success(`Successfully authenticated with Discord!`);
-        setProcessing(false);
-        
-        // Clear the OAuth state since we don't need it anymore
-        localStorage.removeItem('discordOAuthState');
+        // Ask user to provide their own bot token
+        toast.info("Please enter your Discord bot token in the dashboard");
         
         // Redirect back to the home page after a short delay
         setTimeout(() => {
           console.log('Redirecting to home page...');
           navigate('/');
         }, 1500);
+        
+        setProcessing(false);
+        
+        // Clear the OAuth state since we don't need it anymore
+        localStorage.removeItem('discordOAuthState');
       } catch (err) {
         console.error('Error processing Discord callback:', err);
         setErrorType('unknown');
