@@ -1,8 +1,9 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useBot } from '@/context/BotContext';
 import { toast } from 'sonner';
-import { supabase } from "@/integrations/supabase/client";
+import { useStatsData } from './dashboard/useStatsData';
+import { useStatsSubscription } from './dashboard/useStatsSubscription';
 
 interface DashboardStats {
   authorizedUsers: string;
@@ -12,7 +13,9 @@ interface DashboardStats {
 }
 
 export const useDashboardStats = () => {
-  const { status, isConnected, executeCommand, fetchGuilds } = useBot();
+  const { status, isConnected } = useBot();
+  const { fetchServerCount, fetchAuthorizedUsers, fetchTransferStats } = useStatsData();
+  
   const [stats, setStats] = useState<DashboardStats>({
     authorizedUsers: '0',
     servers: '0',
@@ -21,86 +24,36 @@ export const useDashboardStats = () => {
   });
   const [loadingStats, setLoadingStats] = useState(false);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (isConnected) {
-        setLoadingStats(true);
-        try {
-          // Get servers count directly from fetchGuilds
-          try {
-            const guilds = await fetchGuilds();
-            const serverCount = guilds.length.toString();
-            setStats(prev => ({ ...prev, servers: serverCount }));
-          } catch (error) {
-            console.error('Error fetching servers:', error);
-            toast.error('Failed to fetch server count');
-          }
-          
-          // Use commands for other stats with proper error handling
-          try {
-            const authResponse = await executeCommand('authorized');
-            if (authResponse && authResponse.success) {
-              setStats(prev => ({ ...prev, authorizedUsers: authResponse.count.toString() }));
-            }
-          } catch (error) {
-            console.error('Error fetching authorized users:', error);
-            toast.error('Failed to fetch user count');
-          }
-          
-          try {
-            // Get transfer data directly from Supabase
-            const { data: transfers, error } = await supabase
-              .from('transfers')
-              .select('*');
-              
-            if (error) {
-              throw error;
-            }
-            
-            const completedTransfers = transfers.filter(t => t.status === 'completed').length;
-            setStats(prev => ({ ...prev, transfers: completedTransfers.toString() }));
-            
-            // Calculate verification rate
-            const totalUsers = transfers.reduce((sum, t) => sum + t.amount, 0);
-            const processedUsers = transfers.reduce((sum, t) => sum + t.users_processed, 0);
-            
-            if (totalUsers > 0) {
-              const rate = Math.round((processedUsers / totalUsers) * 100);
-              setStats(prev => ({ ...prev, verificationRate: `${rate}%` }));
-            }
-          } catch (error) {
-            console.error('Error fetching transfer progress:', error);
-            toast.error('Failed to fetch transfer statistics');
-            
-            // Fallback to the command
-            try {
-              const progressResponse = await executeCommand('progress');
-              if (progressResponse && progressResponse.success) {
-                const transfers = progressResponse.transfers || 0;
-                const pendingUsers = progressResponse.pendingUsers || 0;
-                const total = transfers + pendingUsers;
-                
-                setStats(prev => ({ 
-                  ...prev, 
-                  transfers: transfers.toString(),
-                  verificationRate: total > 0 ? 
-                    `${Math.round((transfers / total) * 100)}%` : 
-                    '0%'
-                }));
-              }
-            } catch (error) {
-              console.error('Error fetching transfer progress via command:', error);
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching dashboard stats:', error);
-          toast.error('Failed to load dashboard statistics');
-        } finally {
-          setLoadingStats(false);
-        }
+  const fetchStats = useCallback(async () => {
+    if (isConnected) {
+      setLoadingStats(true);
+      try {
+        // Fetch server count
+        const serverCount = await fetchServerCount();
+        setStats(prev => ({ ...prev, servers: serverCount }));
+        
+        // Fetch authorized users
+        const authorizedUsers = await fetchAuthorizedUsers();
+        setStats(prev => ({ ...prev, authorizedUsers }));
+        
+        // Fetch transfer stats
+        const { transfers, verificationRate } = await fetchTransferStats();
+        setStats(prev => ({ 
+          ...prev, 
+          transfers, 
+          verificationRate 
+        }));
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+        toast.error('Failed to load dashboard statistics');
+      } finally {
+        setLoadingStats(false);
       }
-    };
-    
+    }
+  }, [isConnected, fetchServerCount, fetchAuthorizedUsers, fetchTransferStats]);
+
+  // Set up initial fetch and refresh interval
+  useEffect(() => {
     fetchStats();
     
     // Set up a refresh interval (every 30 seconds)
@@ -110,89 +63,20 @@ export const useDashboardStats = () => {
       }
     }, 30000);
     
-    // Set up a subscription for real-time updates to transfers
-    const channel = supabase
-      .channel('transfers-channel')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'transfers'
-        },
-        () => {
-          // When transfers change, refresh stats
-          fetchStats();
-        }
-      )
-      .subscribe();
-    
     return () => {
       clearInterval(interval);
-      supabase.removeChannel(channel);
     };
-  }, [isConnected, executeCommand, fetchGuilds]);
+  }, [isConnected, fetchStats]);
+
+  // Set up subscription to transfers table
+  useStatsSubscription(fetchStats);
 
   const refreshStats = async () => {
     toast.info("Refreshing dashboard statistics...");
-    setLoadingStats(true);
     
     if (isConnected) {
-      try {
-        // Get servers count directly from fetchGuilds
-        try {
-          const guilds = await fetchGuilds();
-          const serverCount = guilds.length.toString();
-          setStats(prev => ({ ...prev, servers: serverCount }));
-        } catch (error) {
-          console.error('Error fetching servers:', error);
-          toast.error('Failed to fetch server count');
-        }
-        
-        // Use commands for other stats with proper error handling
-        try {
-          const authResponse = await executeCommand('authorized');
-          if (authResponse && authResponse.success) {
-            setStats(prev => ({ ...prev, authorizedUsers: authResponse.count.toString() }));
-          }
-        } catch (error) {
-          console.error('Error fetching authorized users:', error);
-          toast.error('Failed to fetch user count');
-        }
-        
-        try {
-          // Get transfer data directly from Supabase
-          const { data: transfers, error } = await supabase
-            .from('transfers')
-            .select('*');
-            
-          if (error) {
-            throw error;
-          }
-          
-          const completedTransfers = transfers.filter(t => t.status === 'completed').length;
-          setStats(prev => ({ ...prev, transfers: completedTransfers.toString() }));
-          
-          // Calculate verification rate
-          const totalUsers = transfers.reduce((sum, t) => sum + t.amount, 0);
-          const processedUsers = transfers.reduce((sum, t) => sum + t.users_processed, 0);
-          
-          if (totalUsers > 0) {
-            const rate = Math.round((processedUsers / totalUsers) * 100);
-            setStats(prev => ({ ...prev, verificationRate: `${rate}%` }));
-          }
-        } catch (error) {
-          console.error('Error fetching transfer progress:', error);
-          toast.error('Failed to fetch transfer statistics');
-        }
-      } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
-        toast.error('Failed to load dashboard statistics');
-      } finally {
-        setLoadingStats(false);
-      }
+      await fetchStats();
     } else {
-      setLoadingStats(false);
       toast.error("Bot is not connected. Please connect first.");
     }
   };
