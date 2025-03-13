@@ -16,6 +16,8 @@ export const useDashboardStats = () => {
   const { status, isConnected } = useBot();
   const { fetchServerCount, fetchAuthorizedUsers, fetchTransferStats } = useStatsData();
   const fetchInProgress = useRef(false);
+  const lastRefreshTime = useRef(0);
+  const REFRESH_COOLDOWN = 3000; // 3 seconds between manual refresh attempts
   
   const [stats, setStats] = useState<DashboardStats>({
     authorizedUsers: '0',
@@ -50,13 +52,12 @@ export const useDashboardStats = () => {
       }));
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
-      // Only show toast once per fetch attempt
-      if (fetchInProgress.current) {
-        toast.error('Failed to load dashboard statistics', { id: 'dashboard-stats-error' });
-      }
+      // Only show toast once per fetch attempt with a consistent ID
+      toast.error('Failed to load dashboard statistics', { id: 'dashboard-stats-error' });
     } finally {
       setLoadingStats(false);
       fetchInProgress.current = false;
+      lastRefreshTime.current = Date.now();
     }
   }, [isConnected, fetchServerCount, fetchAuthorizedUsers, fetchTransferStats]);
 
@@ -82,8 +83,16 @@ export const useDashboardStats = () => {
   useStatsSubscription(fetchStats);
 
   const refreshStats = async () => {
+    const now = Date.now();
+    
+    // Check if we're already fetching or if we've refreshed too recently
     if (fetchInProgress.current) {
       toast.info("Stats refresh already in progress", { id: 'refresh-stats-info' });
+      return;
+    }
+    
+    if (now - lastRefreshTime.current < REFRESH_COOLDOWN) {
+      toast.info("Please wait before refreshing again", { id: 'refresh-cooldown' });
       return;
     }
     

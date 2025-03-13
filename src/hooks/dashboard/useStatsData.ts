@@ -3,6 +3,16 @@ import { useBot } from '@/context/BotContext';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
 
+// Track when the last error was shown for each error type to prevent spam
+const errorNotificationTimestamps = {
+  serverCount: 0,
+  userCount: 0,
+  transferStats: 0
+};
+
+// Minimum time between showing the same error notification (5 seconds)
+const ERROR_NOTIFICATION_COOLDOWN = 5000;
+
 export const useStatsData = () => {
   const { fetchGuilds, executeCommand } = useBot();
 
@@ -12,8 +22,15 @@ export const useStatsData = () => {
       return guilds.length.toString();
     } catch (error) {
       console.error('Error fetching servers:', error);
-      // Use a consistent toast ID to prevent duplicate notifications
-      toast.error('Failed to fetch server count', { id: 'server-count-error' });
+      
+      // Check if we should show this error message based on cooldown
+      const now = Date.now();
+      if (now - errorNotificationTimestamps.serverCount > ERROR_NOTIFICATION_COOLDOWN) {
+        errorNotificationTimestamps.serverCount = now;
+        // Use a consistent toast ID to prevent duplicate notifications
+        toast.error('Failed to fetch server count', { id: 'server-count-error' });
+      }
+      
       return '0';
     }
   };
@@ -27,7 +44,14 @@ export const useStatsData = () => {
       return '0';
     } catch (error) {
       console.error('Error fetching authorized users:', error);
-      toast.error('Failed to fetch user count', { id: 'user-count-error' });
+      
+      // Check if we should show this error message based on cooldown
+      const now = Date.now();
+      if (now - errorNotificationTimestamps.userCount > ERROR_NOTIFICATION_COOLDOWN) {
+        errorNotificationTimestamps.userCount = now;
+        toast.error('Failed to fetch user count', { id: 'user-count-error' });
+      }
+      
       return '0';
     }
   };
@@ -85,8 +109,15 @@ export const useStatsData = () => {
       return { transfers: '0', verificationRate: '0%' };
     } catch (error) {
       console.error('Error fetching transfer progress via command:', error);
-      // Use consistent toast ID to prevent duplicates
-      toast.error('Failed to fetch transfer stats', { id: 'transfer-stats-error' });
+      
+      // Check if we should show this error message based on cooldown
+      const now = Date.now();
+      if (now - errorNotificationTimestamps.transferStats > ERROR_NOTIFICATION_COOLDOWN) {
+        errorNotificationTimestamps.transferStats = now;
+        // Use consistent toast ID to prevent duplicates
+        toast.error('Failed to fetch transfer stats', { id: 'transfer-stats-error' });
+      }
+      
       return { transfers: '0', verificationRate: '0%' };
     }
   };
