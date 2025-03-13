@@ -1,4 +1,5 @@
 
 import { useCommandExecution } from './useCommandExecution';
+import { useCommandHistory } from './useCommandHistory';
 
-export { useCommandExecution };
+export { useCommandExecution, useCommandHistory };
