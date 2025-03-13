@@ -1,7 +1,7 @@
 
 import { createMockCheckoutSession, redirectToCheckout } from "@/utils/mockApi";
 import { toast } from "sonner";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, X } from "lucide-react";
 
 export const processPayment = async (tierName: string, priceId: string | null) => {
   if (!priceId) {
@@ -48,6 +48,27 @@ export const checkPremiumStatus = () => {
 // Function to get the current premium tier
 export const getPremiumTier = () => {
   return localStorage.getItem('premiumTier') || null;
+};
+
+// Enhanced function to cancel subscription
+export const cancelSubscription = async () => {
+  // In a real implementation, this would make an API call to your payment processor
+  // to cancel the active subscription
+  
+  // For our mock implementation, show a cancellation confirmation
+  toast.success("Subscription cancelled successfully", {
+    description: "Your subscription has been cancelled. You will have access until the end of your billing period.",
+    icon: <X className="h-4 w-4 text-red-500" />
+  });
+  
+  // Add some delay to simulate a real API call
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Update local storage to reflect the cancellation
+  localStorage.removeItem('isPremium');
+  localStorage.removeItem('premiumTier');
+  
+  return true;
 };
 
 // Function to downgrade to basic (for testing/development)

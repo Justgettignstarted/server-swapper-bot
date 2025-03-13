@@ -1,14 +1,27 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Check, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Crown, Check, AlertCircle, X, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { checkPremiumStatus, getPremiumTier } from './PaymentService';
+import { checkPremiumStatus, getPremiumTier, cancelSubscription } from './PaymentService';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const SubscriptionStatus: React.FC = () => {
   const isPremium = checkPremiumStatus();
   const currentTier = getPremiumTier() || "Basic";
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   
   // Define feature limits based on tier
   const tierLimits = {
@@ -31,6 +44,20 @@ export const SubscriptionStatus: React.FC = () => {
   
   // Get current tier limits
   const limits = tierLimits[currentTier as keyof typeof tierLimits];
+
+  const handleCancelSubscription = async () => {
+    setIsCancelling(true);
+    try {
+      await cancelSubscription();
+      setCancelDialogOpen(false);
+      // Dispatch a storage event to notify other components about the cancellation
+      window.dispatchEvent(new Event('storage'));
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
   
   return (
     <motion.div
@@ -89,9 +116,54 @@ export const SubscriptionStatus: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {isPremium && (
+              <div className="flex justify-end mt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-red-800 dark:hover:bg-red-950"
+                  onClick={() => setCancelDialogOpen(true)}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel Subscription
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel your {currentTier} subscription? You'll lose access to premium features at the end of your current billing period.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCancelling}>Keep Subscription</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                handleCancelSubscription();
+              }} 
+              className="bg-red-500 hover:bg-red-600 text-white"
+              disabled={isCancelling}
+            >
+              {isCancelling ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Cancelling...
+                </>
+              ) : (
+                "Yes, Cancel"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   );
 };
