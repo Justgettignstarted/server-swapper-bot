@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, RefreshCw } from 'lucide-react';
 import { useBot } from '@/context/BotContext';
 import { toast } from 'sonner';
 
@@ -26,6 +26,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     toast.info("Checking bot connection...");
   };
 
+  const openDocumentation = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDocOpen(true);
+  };
+
   return (
     <div className="flex items-center justify-between mb-4">
       <div className="text-sm flex items-center gap-2">
@@ -46,7 +52,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setIsDocOpen(true)}
+          onClick={openDocumentation}
           className="flex items-center gap-1"
         >
           <HelpCircle className="h-4 w-4" />
@@ -57,7 +63,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           size="sm" 
           onClick={handleRefreshConnection}
           disabled={connecting}
+          className="flex items-center gap-1"
         >
+          <RefreshCw className={`h-4 w-4 ${connecting ? 'animate-spin' : ''}`} />
           {connecting ? 'Checking...' : 'Refresh Connection'}
         </Button>
         {isConnected && (
@@ -66,7 +74,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             size="sm" 
             onClick={handleRefreshStats}
             disabled={loadingStats}
+            className="flex items-center gap-1"
           >
+            <RefreshCw className={`h-4 w-4 ${loadingStats ? 'animate-spin' : ''}`} />
             {loadingStats ? 'Refreshing...' : 'Refresh Stats'}
           </Button>
         )}

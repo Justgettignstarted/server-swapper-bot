@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -16,9 +16,28 @@ export const DocumentationModal: React.FC<DocumentationModalProps> = ({
   open,
   onOpenChange
 }) => {
+  // Ensure the scroll position resets when the modal opens
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
+
+  const handleCloseModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onOpenChange(false);
+  };
+
+  // Force the modal to be in the foreground when open
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden z-50">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <Info className="h-5 w-5 text-blue-400" />
@@ -229,7 +248,7 @@ export const DocumentationModal: React.FC<DocumentationModalProps> = ({
           </div>
         </ScrollArea>
         <div className="flex justify-end pt-2 border-t border-gray-700">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={handleCloseModal}>
             Close Documentation
           </Button>
         </div>
