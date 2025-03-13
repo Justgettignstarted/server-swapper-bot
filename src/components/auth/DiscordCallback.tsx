@@ -1,12 +1,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBot } from '@/context/BotContext';
+import { Button } from '@/components/ui/button';
 
 export const DiscordCallback = () => {
   const [error, setError] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<string | null>(null);
   const [processing, setProcessing] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
@@ -28,24 +30,37 @@ export const DiscordCallback = () => {
           error: errorParam,
           errorDescription
         });
-        
-        // Verify that we have a code and there's no error
+
+        // Check for Discord OAuth errors
         if (errorParam) {
           console.error("Discord auth error:", errorParam, errorDescription);
+          setErrorType(errorParam);
+          
           const errorMessage = errorDescription || `Authentication failed: ${errorParam}`;
           setError(errorMessage);
+          
+          // Special handling for redirect_uri errors
+          if (errorParam === 'invalid_request' && errorDescription?.includes('redirect_uri')) {
+            const storedRedirectUri = localStorage.getItem('discordRedirectUri');
+            console.log("Stored redirect URI:", storedRedirectUri);
+            
+            // More specific error handling for redirect URI mismatch
+            setError(`The redirect URI doesn't match what's configured in your Discord application. 
+                     Please add "${storedRedirectUri}" to your Discord application's OAuth2 redirect settings.`);
+          }
+          
           toast.error(errorMessage);
           setProcessing(false);
-          setTimeout(() => navigate('/'), 3000);
           return;
         }
         
+        // Verify that we have a code
         if (!code) {
           console.error("No authorization code received");
+          setErrorType('no_code');
           setError('No authorization code received');
           toast.error('Authentication failed: No code received from Discord');
           setProcessing(false);
-          setTimeout(() => navigate('/'), 3000);
           return;
         }
 
@@ -53,10 +68,10 @@ export const DiscordCallback = () => {
         const storedState = localStorage.getItem('discordOAuthState');
         if (!state || state !== storedState) {
           console.error("Invalid state parameter", { received: state, stored: storedState });
+          setErrorType('invalid_state');
           setError('Invalid state parameter');
           toast.error('Authentication failed: Security verification failed');
           setProcessing(false);
-          setTimeout(() => navigate('/'), 3000);
           return;
         }
 
@@ -99,24 +114,51 @@ export const DiscordCallback = () => {
         }, 1500);
       } catch (err) {
         console.error('Error processing Discord callback:', err);
+        setErrorType('unknown');
         setError('Failed to complete authentication');
         toast.error('Authentication failed. Please try again.');
         setProcessing(false);
-        setTimeout(() => navigate('/'), 3000);
       }
     };
 
     handleOAuthCallback();
   }, [location, navigate, setToken, checkConnection]);
 
+  const handleBackToHome = () => {
+    navigate('/');
+  };
+
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-b from-gray-900 to-black">
       <div className="text-center max-w-md mx-auto p-6 bg-gray-800/50 rounded-lg shadow-xl border border-gray-700">
         {error ? (
           <div className="space-y-4">
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto">
+              <AlertCircle className="h-8 w-8 text-red-500" />
+            </div>
             <h2 className="text-2xl font-bold text-red-500">Authentication Error</h2>
             <p className="text-white/80">{error}</p>
-            <p className="text-white/60">Redirecting you back...</p>
+            
+            {errorType === 'invalid_request' && (
+              <div className="mt-4 p-4 bg-gray-700/50 rounded-md text-white/90 text-sm text-left">
+                <h3 className="font-semibold mb-2">How to fix this:</h3>
+                <ol className="list-decimal list-inside space-y-2">
+                  <li>Go to the <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Discord Developer Portal</a></li>
+                  <li>Select your application</li>
+                  <li>Go to OAuth2 → General</li>
+                  <li>Add this redirect URL: <code className="bg-gray-700 p-1 rounded">{localStorage.getItem('discordRedirectUri')}</code></li>
+                  <li>Save changes and try again</li>
+                </ol>
+              </div>
+            )}
+            
+            <Button 
+              variant="outline" 
+              onClick={handleBackToHome}
+              className="mt-4"
+            >
+              Back to Home
+            </Button>
           </div>
         ) : (
           <div className="space-y-4">
