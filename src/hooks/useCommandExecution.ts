@@ -111,9 +111,21 @@ export const useCommandExecution = () => {
             }
             
             response = await executeCommand('join', { gid: guildId, amt: amount });
-            toast.success(response.message, { id: `cmd-${cmd}` });
+            toast.success(`Transfer initiated: ${response.message}`, { id: `cmd-${cmd}` });
+            console.log('Transfer details:', response);
           } else {
             toast.error('Please provide both guild ID and amount: -join <guildId> <amount>', { id: `cmd-${cmd}` });
+          }
+          break;
+          
+        case 'transferStatus':
+          if (parts.length >= 2) {
+            const transferId = parts[1];
+            response = await executeCommand('transferStatus', { transferId });
+            toast.success(`Transfer progress: ${response.progress}%`, { id: `cmd-${cmd}` });
+            console.log('Transfer status:', response);
+          } else {
+            toast.error('Please provide transfer ID: -transferStatus <transferId>', { id: `cmd-${cmd}` });
           }
           break;
           

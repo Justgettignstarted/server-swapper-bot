@@ -27,6 +27,11 @@ export const commands: CommandData[] = [
     example: "-join <gid> <amt>"
   },
   {
+    command: "-transferStatus",
+    description: "Check status of a transfer",
+    example: "-transferStatus <transferId>"
+  },
+  {
     command: "-refreshtokens",
     description: "Refresh tokens",
     example: "-refreshtokens"

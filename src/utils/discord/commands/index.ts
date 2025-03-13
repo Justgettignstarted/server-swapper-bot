@@ -4,7 +4,7 @@
 
 import { sendChannelMessage } from './messaging';
 import { fetchAuthCount } from './auth';
-import { transferUsers } from './transfer';
+import { transferUsers, checkTransferStatus } from './transfer';
 import { setRole } from './roles';
 import { fetchTransferStats } from './stats';
 import { checkBotStatus, getBotConnectionStatus } from '../api/connection';
@@ -47,6 +47,11 @@ export const sendBotCommand = async (token: string, command: string, params: Rec
         const { gid, amt } = params;
         if (!gid || !amt) throw new Error('Missing required parameters');
         return transferUsers(token, gid, amt);
+        
+      case 'transferStatus':
+        const { transferId } = params;
+        if (!transferId) throw new Error('Transfer ID is required');
+        return checkTransferStatus(token, transferId);
         
       case 'refreshtokens':
         return refreshTokens(token);

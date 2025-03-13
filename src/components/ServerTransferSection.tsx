@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,8 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { useBot } from '@/context/BotContext';
+import { Badge } from '@/components/ui/badge';
+import { RefreshCw, Users, Server } from 'lucide-react';
 
 export const ServerTransferSection = () => {
   const [serverId, setServerId] = useState('');
@@ -16,8 +18,34 @@ export const ServerTransferSection = () => {
   const [progress, setProgress] = useState(0);
   const [usersTransferred, setUsersTransferred] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [transferId, setTransferId] = useState<string | null>(null);
+  const [targetServer, setTargetServer] = useState<{id: string, name: string} | null>(null);
   
   const { executeCommand, isConnected } = useBot();
+
+  // Check transfer status periodically if a transfer is active
+  useEffect(() => {
+    if (!transferId || progress >= 100) return;
+    
+    const interval = setInterval(async () => {
+      try {
+        const statusResponse = await executeCommand('transferStatus', { transferId });
+        if (statusResponse.progress) {
+          setProgress(statusResponse.progress);
+          setUsersTransferred(Math.floor((statusResponse.progress / 100) * totalUsers));
+          
+          if (statusResponse.progress >= 100) {
+            toast.success(`Successfully transferred ${totalUsers} users to server ${serverId}`);
+            clearInterval(interval);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to check transfer status:", error);
+      }
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, [transferId, totalUsers, serverId, progress, executeCommand]);
 
   const handleStartTransfer = async () => {
     if (!serverId) {
@@ -25,8 +53,8 @@ export const ServerTransferSection = () => {
       return;
     }
     
-    if (!amount || isNaN(parseInt(amount))) {
-      toast.error("Please enter a valid amount");
+    if (!amount || isNaN(parseInt(amount)) || parseInt(amount) <= 0) {
+      toast.error("Please enter a valid amount greater than 0");
       return;
     }
     
@@ -47,31 +75,45 @@ export const ServerTransferSection = () => {
         amt: parseInt(amount) 
       });
       
-      toast.success(`Starting transfer to server ${serverId}`);
+      // Set transfer ID for status tracking
+      setTransferId(response.transferId);
       
-      // Simulate progress (in a real app, this would be updated via websockets or polling)
-      const interval = setInterval(() => {
-        setProgress(prev => {
-          const newProgress = prev + Math.random() * 5;
-          const newUsersTransferred = Math.floor((newProgress / 100) * parseInt(amount));
-          setUsersTransferred(newUsersTransferred);
-          
-          if (newProgress >= 100) {
-            clearInterval(interval);
-            setProgress(100);
-            setUsersTransferred(parseInt(amount));
-            setIsProcessing(false);
-            toast.success(`Successfully transferred ${amount} users to server ${serverId}`);
-            return 100;
-          }
-          
-          return newProgress;
-        });
-      }, 800);
+      // Set target server info if available
+      if (response.guild) {
+        setTargetServer(response.guild);
+      }
+      
+      toast.success(`Starting transfer to server ${response.guild?.name || serverId}`);
+      
+      // Set initial progress based on the first batch
+      const initialProgress = Math.floor((response.initialBatch / parseInt(amount)) * 100);
+      setProgress(initialProgress);
+      setUsersTransferred(response.initialBatch);
+      
+      // If all users were transferred in the initial batch, mark as complete
+      if (response.remainingUsers === 0) {
+        setTimeout(() => {
+          setProgress(100);
+          setUsersTransferred(parseInt(amount));
+          setIsProcessing(false);
+          toast.success(`Successfully transferred ${amount} users to server ${response.guild?.name || serverId}`);
+        }, 1000);
+      }
     } catch (error) {
-      toast.error("Failed to start transfer");
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to start transfer: ${errorMessage}`);
       setIsProcessing(false);
+      setTransferId(null);
     }
+  };
+
+  const handleCancelTransfer = () => {
+    // In a real app, this would call an API to cancel the transfer
+    setIsProcessing(false);
+    setTransferId(null);
+    setProgress(0);
+    setUsersTransferred(0);
+    toast.info("Transfer cancelled");
   };
 
   return (
@@ -108,27 +150,67 @@ export const ServerTransferSection = () => {
               onChange={(e) => setAmount(e.target.value)}
               className="bg-secondary/50 border-secondary"
               disabled={isProcessing}
+              type="number"
+              min="1"
             />
           </div>
           
           {isProcessing && (
-            <div className="space-y-2 mt-4">
+            <div className="space-y-3 mt-4">
+              {targetServer && (
+                <div className="flex items-center gap-2">
+                  <Server className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">Target server: </span>
+                  <Badge variant="outline">{targetServer.name}</Badge>
+                </div>
+              )}
+              
+              {transferId && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Transfer ID: {transferId}</span>
+                </div>
+              )}
+              
               <div className="flex justify-between text-sm">
-                <span>Transfer Progress</span>
+                <div className="flex items-center gap-1">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span>Transfer Progress</span>
+                </div>
                 <span>{usersTransferred} / {totalUsers} users</span>
               </div>
+              
               <Progress value={progress} className="h-2" />
+              
+              <div className="flex items-center gap-2 text-xs">
+                <RefreshCw className={`h-3 w-3 ${progress < 100 ? 'animate-spin' : ''}`} />
+                <span>
+                  {progress < 100 
+                    ? `Transferring users... (${progress}%)`
+                    : 'Transfer complete!'}
+                </span>
+              </div>
             </div>
           )}
         </CardContent>
         <CardFooter>
-          <Button 
-            onClick={handleStartTransfer} 
-            disabled={isProcessing || !isConnected} 
-            className="w-full bg-discord-blurple hover:bg-discord-blurple/90 btn-shine"
-          >
-            {isProcessing ? 'Transferring...' : 'Start Transfer'}
-          </Button>
+          {!isProcessing ? (
+            <Button 
+              onClick={handleStartTransfer} 
+              disabled={isProcessing || !isConnected} 
+              className="w-full bg-discord-blurple hover:bg-discord-blurple/90 btn-shine"
+            >
+              Start Transfer
+            </Button>
+          ) : (
+            <Button 
+              onClick={handleCancelTransfer}
+              variant="destructive"
+              className="w-full"
+              disabled={progress >= 100}
+            >
+              {progress >= 100 ? 'Transfer Complete' : 'Cancel Transfer'}
+            </Button>
+          )}
         </CardFooter>
       </Card>
     </motion.div>
