@@ -36,29 +36,29 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
           disabled={loadingStats}
           className="flex items-center gap-1"
         >
-          <RefreshCw className="h-4 w-4" />
-          <span>Refresh</span>
+          <RefreshCw className={`h-4 w-4 ${loadingStats ? 'animate-spin' : ''}`} />
+          <span>{loadingStats ? 'Refreshing...' : 'Refresh'}</span>
         </Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatisticsCard 
           title="Authorized Users" 
-          value={loadingStats ? '...' : stats.authorizedUsers} 
+          value={loadingStats ? 'Loading...' : stats.authorizedUsers} 
           icon={<Users className="h-6 w-6 text-primary" />} 
         />
         <StatisticsCard 
           title="Servers" 
-          value={loadingStats ? '...' : stats.servers} 
+          value={loadingStats ? 'Loading...' : stats.servers} 
           icon={<Server className="h-6 w-6 text-primary" />} 
         />
         <StatisticsCard 
           title="Transfers Completed" 
-          value={loadingStats ? '...' : stats.transfers} 
+          value={loadingStats ? 'Loading...' : stats.transfers} 
           icon={<RotateCw className="h-6 w-6 text-primary" />} 
         />
         <StatisticsCard 
           title="Verification Rate" 
-          value={loadingStats ? '...' : stats.verificationRate} 
+          value={loadingStats ? 'Loading...' : stats.verificationRate} 
           icon={<ShieldCheck className="h-6 w-6 text-primary" />} 
         />
       </div>
