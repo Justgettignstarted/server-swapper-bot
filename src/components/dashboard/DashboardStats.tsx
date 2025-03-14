@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { StatisticsCard } from '@/components/StatisticsCard';
-import { Users, Server, RotateCw, ShieldCheck } from 'lucide-react';
+import { Users, Server, RotateCw, ShieldCheck, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 
 interface DashboardStatsProps {
   stats: {
@@ -12,11 +13,13 @@ interface DashboardStatsProps {
     verificationRate: string;
   };
   loadingStats: boolean;
+  onRefresh: () => void;
 }
 
 export const DashboardStats: React.FC<DashboardStatsProps> = ({ 
   stats, 
-  loadingStats 
+  loadingStats,
+  onRefresh
 }) => {
   return (
     <motion.div
@@ -24,6 +27,19 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-medium">Dashboard Statistics</h2>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onRefresh}
+          disabled={loadingStats}
+          className="flex items-center gap-1"
+        >
+          <RefreshCw className="h-4 w-4" />
+          <span>Refresh</span>
+        </Button>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatisticsCard 
           title="Authorized Users" 

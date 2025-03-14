@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { NavBar } from './NavBar';
 import { BotSetup } from './BotSetup';
@@ -100,7 +101,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
             
             {isConnected && (
               <>
-                <DashboardStats stats={stats} loadingStats={loadingStats} />
+                <DashboardStats 
+                  stats={stats} 
+                  loadingStats={loadingStats} 
+                  onRefresh={refreshStats} 
+                />
                 <DashboardTabs />
               </>
             )}

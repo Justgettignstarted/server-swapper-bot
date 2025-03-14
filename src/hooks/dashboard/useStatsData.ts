@@ -67,17 +67,40 @@ export const useStatsData = () => {
         throw error;
       }
       
+      // Calculate completed transfers
       const completedTransfers = transfers.filter(t => t.status === 'completed').length;
       
-      // Calculate verification rate
-      const totalUsers = transfers.reduce((sum, t) => sum + t.amount, 0);
-      const processedUsers = transfers.reduce((sum, t) => sum + t.users_processed, 0);
+      // Calculate verification rate - ensure reliable calculation
+      let totalUsers = 0;
+      let processedUsers = 0;
       
+      if (transfers && transfers.length > 0) {
+        totalUsers = transfers.reduce((sum, t) => {
+          // Ensure we're working with numbers
+          const amount = typeof t.amount === 'number' ? t.amount : 0;
+          return sum + amount;
+        }, 0);
+        
+        processedUsers = transfers.reduce((sum, t) => {
+          // Ensure we're working with numbers
+          const processed = typeof t.users_processed === 'number' ? t.users_processed : 0;
+          return sum + processed;
+        }, 0);
+      }
+      
+      // Format verification rate
       let verificationRate = '0%';
       if (totalUsers > 0) {
         const rate = Math.round((processedUsers / totalUsers) * 100);
         verificationRate = `${rate}%`;
       }
+      
+      console.log('Transfer stats calculation:', { 
+        completedTransfers, 
+        totalUsers, 
+        processedUsers, 
+        verificationRate 
+      });
       
       return { 
         transfers: completedTransfers.toString(), 
