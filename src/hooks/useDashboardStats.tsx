@@ -51,14 +51,14 @@ export const useDashboardStats = () => {
     }, MAX_LOADING_TIME);
     
     try {
-      // Get data concurrently to speed up loading
+      // Get data from real API endpoints concurrently
       const [serverCount, authorizedUsers, transferData] = await Promise.all([
         fetchServerCount().catch(() => "0"),
         fetchAuthorizedUsers().catch(() => "0"),
         fetchTransferStats().catch(() => ({ transfers: "0", verificationRate: "0%" }))
       ]);
       
-      // Only update if we have valid values
+      // Update stats with real data
       setStats({
         servers: serverCount || "0",
         authorizedUsers: authorizedUsers || "0",
@@ -120,7 +120,7 @@ export const useDashboardStats = () => {
     };
   }, [isConnected, fetchStats]);
 
-  // Set up subscription to transfers table
+  // Set up subscription to transfers table for real-time updates
   useStatsSubscription(fetchStats);
 
   const refreshStats = useCallback(async () => {

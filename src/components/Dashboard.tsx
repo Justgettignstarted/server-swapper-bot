@@ -11,6 +11,7 @@ import { DashboardTabs } from './dashboard/DashboardTabs';
 import { PremiumSection } from './PremiumSection';
 import { SubscriptionStatus } from './premium/SubscriptionStatus';
 import { checkPremiumStatus, getPremiumTier } from './premium/PaymentService';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -26,6 +27,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onUpgrade
 }) => {
   const { isConnected } = useBot();
+  const { loadingStats, refreshStats } = useDashboardStats();
   const [isDocOpen, setIsDocOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentTier, setCurrentTier] = useState<string | null>(getPremiumTier());
@@ -87,8 +89,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <DashboardHeader 
               isDocOpen={isDocOpen} 
               setIsDocOpen={setIsDocOpen}
-              loadingStats={false}
-              handleRefreshStats={() => {}}
+              loadingStats={loadingStats}
+              handleRefreshStats={refreshStats}
             />
             
             {!isConnected && (
