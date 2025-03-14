@@ -22,8 +22,13 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const { status, checkConnection, connecting, isConnected } = useBot();
 
   const handleRefreshConnection = () => {
-    checkConnection();
-    toast.info("Checking bot connection...");
+    // Only check connection if we're not already connecting
+    if (!connecting) {
+      checkConnection();
+      toast.info("Checking bot connection...");
+    } else {
+      toast.info("Connection check already in progress...");
+    }
   };
 
   return (
@@ -62,7 +67,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <RefreshCw className={`h-4 w-4 ${connecting ? 'animate-spin' : ''}`} />
           {connecting ? 'Checking...' : 'Check Connection'}
         </Button>
-        {isConnected && (
+        {isConnected && !connecting && (
           <Button 
             variant="default" 
             size="sm" 

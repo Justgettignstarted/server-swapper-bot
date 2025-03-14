@@ -32,22 +32,22 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
         <StatisticsCard 
           title="Authorized Users" 
           value={loadingStats ? 'Loading...' : stats.authorizedUsers} 
-          icon={<Users className="h-6 w-6 text-primary" />} 
+          icon={<Users className={`h-6 w-6 text-primary ${loadingStats ? 'animate-pulse' : ''}`} />} 
         />
         <StatisticsCard 
           title="Servers" 
           value={loadingStats ? 'Loading...' : stats.servers} 
-          icon={<Server className="h-6 w-6 text-primary" />} 
+          icon={<Server className={`h-6 w-6 text-primary ${loadingStats ? 'animate-pulse' : ''}`} />} 
         />
         <StatisticsCard 
           title="Transfers Completed" 
           value={loadingStats ? 'Loading...' : stats.transfers} 
-          icon={<RotateCw className="h-6 w-6 text-primary" />} 
+          icon={<RotateCw className={`h-6 w-6 text-primary ${loadingStats ? 'animate-pulse' : ''}`} />} 
         />
         <StatisticsCard 
           title="Verification Rate" 
           value={loadingStats ? 'Loading...' : stats.verificationRate} 
-          icon={<ShieldCheck className="h-6 w-6 text-primary" />} 
+          icon={<ShieldCheck className={`h-6 w-6 text-primary ${loadingStats ? 'animate-pulse' : ''}`} />} 
         />
       </div>
     </motion.div>

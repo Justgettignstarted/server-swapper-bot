@@ -20,6 +20,7 @@ export const useDashboardStats = () => {
   const lastErrorTime = useRef(0);
   const ERROR_COOLDOWN = 10000; // 10 seconds between error messages
   const REFRESH_COOLDOWN = 3000; // 3 seconds between manual refresh attempts
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [stats, setStats] = useState<DashboardStats>({
     authorizedUsers: '0',
@@ -39,28 +40,19 @@ export const useDashboardStats = () => {
     try {
       // Get data concurrently to speed up loading
       const [serverCount, authorizedUsers, transferData] = await Promise.all([
-        fetchServerCount(),
-        fetchAuthorizedUsers(),
-        fetchTransferStats()
+        fetchServerCount().catch(() => "0"),
+        fetchAuthorizedUsers().catch(() => "0"),
+        fetchTransferStats().catch(() => ({ transfers: "0", verificationRate: "0%" }))
       ]);
       
       // Only update if we have valid values
-      if (
-        serverCount !== undefined && 
-        authorizedUsers !== undefined && 
-        transferData.transfers !== undefined && 
-        transferData.verificationRate !== undefined
-      ) {
-        setStats({
-          servers: serverCount,
-          authorizedUsers: authorizedUsers,
-          transfers: transferData.transfers,
-          verificationRate: transferData.verificationRate
-        });
-        console.log('Stats updated successfully');
-      } else {
-        console.warn('Some stats values were undefined, skipping update');
-      }
+      setStats({
+        servers: serverCount || "0",
+        authorizedUsers: authorizedUsers || "0",
+        transfers: transferData?.transfers || "0",
+        verificationRate: transferData?.verificationRate || "0%"
+      });
+      console.log('Stats updated successfully');
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
       
@@ -71,10 +63,17 @@ export const useDashboardStats = () => {
         toast.error('Failed to load dashboard statistics', { id: 'dashboard-stats-error' });
       }
     } finally {
-      fetchInProgress.current = false;
-      lastRefreshTime.current = Date.now();
-      // Ensure loading state is reset
-      setLoadingStats(false);
+      // Add a small delay before resetting loading state
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+      
+      refreshTimeoutRef.current = setTimeout(() => {
+        fetchInProgress.current = false;
+        lastRefreshTime.current = Date.now();
+        setLoadingStats(false);
+        refreshTimeoutRef.current = null;
+      }, 1000); // Ensure loading state shows for at least 1 second
     }
   }, [isConnected, fetchServerCount, fetchAuthorizedUsers, fetchTransferStats]);
 
@@ -93,6 +92,9 @@ export const useDashboardStats = () => {
     
     return () => {
       clearInterval(interval);
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
     };
   }, [isConnected, fetchStats]);
 

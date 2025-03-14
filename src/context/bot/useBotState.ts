@@ -19,6 +19,7 @@ export const useBotState = () => {
   const [connecting, setConnecting] = useState(false);
   const checkInProgress = useRef(false);
   const initialCheckDone = useRef(false);
+  const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const setToken = (newToken: string) => {
     if (!newToken.trim()) {
@@ -45,6 +46,12 @@ export const useBotState = () => {
     if (checkInProgress.current) {
       console.log("Connection check already in progress, skipping");
       return;
+    }
+    
+    // Clear any existing timeout to prevent overlapping checks
+    if (checkTimeoutRef.current) {
+      clearTimeout(checkTimeoutRef.current);
+      checkTimeoutRef.current = null;
     }
     
     checkInProgress.current = true;
@@ -75,8 +82,12 @@ export const useBotState = () => {
       });
       toast.error(`Failed to check bot status: ${errorMessage}`);
     } finally {
-      setConnecting(false);
-      checkInProgress.current = false;
+      // Add a small delay before allowing another check
+      checkTimeoutRef.current = setTimeout(() => {
+        setConnecting(false);
+        checkInProgress.current = false;
+        checkTimeoutRef.current = null;
+      }, 2000); // 2 second cooldown
     }
   };
 
@@ -111,6 +122,10 @@ export const useBotState = () => {
       if (interval) {
         console.log("Clearing periodic connection checks");
         clearInterval(interval);
+      }
+      // Also clear any timeout on unmount
+      if (checkTimeoutRef.current) {
+        clearTimeout(checkTimeoutRef.current);
       }
     };
   }, [token, status.status]);
