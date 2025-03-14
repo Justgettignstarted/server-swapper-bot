@@ -22,7 +22,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
             "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
         },
         duration: 5000, // Auto-dismiss after 5 seconds
-        dismissible: true
+        closeButton: true // Use closeButton instead of dismissible
       }}
       {...props}
     />
