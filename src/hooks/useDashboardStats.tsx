@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useBot } from '@/context/BotContext';
 import { toast } from 'sonner';
@@ -36,41 +37,29 @@ export const useDashboardStats = () => {
     setLoadingStats(true);
     
     try {
-      const results = await Promise.allSettled([
+      // Get data concurrently to speed up loading
+      const [serverCount, authorizedUsers, transferData] = await Promise.all([
         fetchServerCount(),
         fetchAuthorizedUsers(),
         fetchTransferStats()
       ]);
       
-      // Extract values from Promise.allSettled results
-      const [serverCountResult, authorizedUsersResult, transferStatsResult] = results;
-      
-      // Update with new values or keep existing ones on failure
-      const newStats = { ...stats };
-      
-      if (serverCountResult.status === 'fulfilled') {
-        newStats.servers = serverCountResult.value;
-      }
-      
-      if (authorizedUsersResult.status === 'fulfilled') {
-        newStats.authorizedUsers = authorizedUsersResult.value;
-      }
-      
-      if (transferStatsResult.status === 'fulfilled') {
-        newStats.transfers = transferStatsResult.value.transfers;
-        newStats.verificationRate = transferStatsResult.value.verificationRate;
-      }
-      
-      // Only update stats if we have valid values
-      const hasValidValues = Object.values(newStats).every(val => 
-        val !== '...' && val !== undefined && val !== null
-      );
-      
-      if (hasValidValues) {
-        setStats(newStats);
-        console.log('Updated stats with valid values:', newStats);
+      // Only update if we have valid values
+      if (
+        serverCount !== undefined && 
+        authorizedUsers !== undefined && 
+        transferData.transfers !== undefined && 
+        transferData.verificationRate !== undefined
+      ) {
+        setStats({
+          servers: serverCount,
+          authorizedUsers: authorizedUsers,
+          transfers: transferData.transfers,
+          verificationRate: transferData.verificationRate
+        });
+        console.log('Stats updated successfully');
       } else {
-        console.warn('Skipped stats update due to invalid values:', newStats);
+        console.warn('Some stats values were undefined, skipping update');
       }
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
@@ -82,14 +71,12 @@ export const useDashboardStats = () => {
         toast.error('Failed to load dashboard statistics', { id: 'dashboard-stats-error' });
       }
     } finally {
-      // Add a slight delay before turning off loading state to avoid flickering
-      setTimeout(() => {
-        setLoadingStats(false);
-        fetchInProgress.current = false;
-        lastRefreshTime.current = Date.now();
-      }, 300);
+      fetchInProgress.current = false;
+      lastRefreshTime.current = Date.now();
+      // Ensure loading state is reset
+      setLoadingStats(false);
     }
-  }, [isConnected, fetchServerCount, fetchAuthorizedUsers, fetchTransferStats, stats]);
+  }, [isConnected, fetchServerCount, fetchAuthorizedUsers, fetchTransferStats]);
 
   // Set up initial fetch and refresh interval
   useEffect(() => {
