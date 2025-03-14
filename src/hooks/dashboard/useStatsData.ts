@@ -10,8 +10,8 @@ const errorNotificationTimestamps = {
   transferStats: 0
 };
 
-// Minimum time between showing the same error notification (5 seconds)
-const ERROR_NOTIFICATION_COOLDOWN = 5000;
+// Minimum time between showing the same error notification (10 seconds)
+const ERROR_NOTIFICATION_COOLDOWN = 10000;
 
 export const useStatsData = () => {
   const { fetchGuilds, executeCommand } = useBot();

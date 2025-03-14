@@ -17,6 +17,8 @@ export const useDashboardStats = () => {
   const { fetchServerCount, fetchAuthorizedUsers, fetchTransferStats } = useStatsData();
   const fetchInProgress = useRef(false);
   const lastRefreshTime = useRef(0);
+  const lastErrorTime = useRef(0);
+  const ERROR_COOLDOWN = 10000; // 10 seconds between error messages
   const REFRESH_COOLDOWN = 3000; // 3 seconds between manual refresh attempts
   
   const [stats, setStats] = useState<DashboardStats>({
@@ -52,8 +54,13 @@ export const useDashboardStats = () => {
       }));
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
-      // Only show toast once per fetch attempt with a consistent ID
-      toast.error('Failed to load dashboard statistics', { id: 'dashboard-stats-error' });
+      
+      // Only show error toast if enough time has passed since the last one
+      const now = Date.now();
+      if (now - lastErrorTime.current > ERROR_COOLDOWN) {
+        lastErrorTime.current = now;
+        toast.error('Failed to load dashboard statistics', { id: 'dashboard-stats-error' });
+      }
     } finally {
       setLoadingStats(false);
       fetchInProgress.current = false;
@@ -69,7 +76,7 @@ export const useDashboardStats = () => {
     
     // Set up a refresh interval (every 30 seconds)
     const interval = setInterval(() => {
-      if (isConnected) {
+      if (isConnected && !fetchInProgress.current) {
         fetchStats();
       }
     }, 30000);
