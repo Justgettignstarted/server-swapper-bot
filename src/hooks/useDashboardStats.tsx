@@ -13,7 +13,7 @@ interface DashboardStats {
 }
 
 export const useDashboardStats = () => {
-  const { status, isConnected } = useBot();
+  const { status, isConnected, token } = useBot();
   const { fetchServerCount, fetchAuthorizedUsers, fetchTransferStats } = useStatsData();
   const fetchInProgress = useRef(false);
   const lastRefreshTime = useRef(0);
@@ -33,8 +33,15 @@ export const useDashboardStats = () => {
   const [loadingStats, setLoadingStats] = useState(false);
 
   const fetchStats = useCallback(async () => {
-    // Prevent multiple simultaneous fetches
-    if (fetchInProgress.current || !isConnected) return;
+    // Don't try to fetch if no token is available or fetch is already in progress
+    if (fetchInProgress.current || !isConnected || !token) {
+      console.log('Skipping stats fetch:', { 
+        fetchInProgress: fetchInProgress.current, 
+        isConnected, 
+        tokenAvailable: !!token 
+      });
+      return;
+    }
     
     fetchInProgress.current = true;
     setLoadingStats(true);
@@ -51,11 +58,22 @@ export const useDashboardStats = () => {
     }, MAX_LOADING_TIME);
     
     try {
+      console.log('Fetching dashboard stats...');
+      
       // Get data from real API endpoints concurrently
       const [serverCount, authorizedUsers, transferData] = await Promise.all([
-        fetchServerCount().catch(() => "0"),
-        fetchAuthorizedUsers().catch(() => "0"),
-        fetchTransferStats().catch(() => ({ transfers: "0", verificationRate: "0%" }))
+        fetchServerCount().catch(err => {
+          console.error('Error fetching server count:', err);
+          return "0";
+        }),
+        fetchAuthorizedUsers().catch(err => {
+          console.error('Error fetching authorized users:', err);
+          return "0";
+        }),
+        fetchTransferStats().catch(err => {
+          console.error('Error fetching transfer stats:', err);
+          return { transfers: "0", verificationRate: "0%" };
+        })
       ]);
       
       // Update stats with real data
@@ -94,11 +112,20 @@ export const useDashboardStats = () => {
         refreshTimeoutRef.current = null;
       }, 1000); // Ensure loading state shows for at least 1 second
     }
-  }, [isConnected, fetchServerCount, fetchAuthorizedUsers, fetchTransferStats]);
+  }, [isConnected, fetchServerCount, fetchAuthorizedUsers, fetchTransferStats, token]);
 
   // Set up initial fetch and refresh interval
   useEffect(() => {
-    if (isConnected) {
+    // Reset stats when connection status changes
+    if (!isConnected) {
+      setStats({
+        authorizedUsers: '0',
+        servers: '0',
+        transfers: '0',
+        verificationRate: '0%'
+      });
+    } else {
+      // Only fetch if we're connected
       fetchStats();
     }
     
@@ -118,7 +145,7 @@ export const useDashboardStats = () => {
         clearTimeout(loadingTimeoutRef.current);
       }
     };
-  }, [isConnected, fetchStats]);
+  }, [isConnected, fetchStats, token]);
 
   // Set up subscription to transfers table for real-time updates
   useStatsSubscription(fetchStats);
@@ -137,14 +164,18 @@ export const useDashboardStats = () => {
       return;
     }
     
-    toast.info("Refreshing dashboard statistics...", { id: 'refresh-stats' });
+    if (!token) {
+      toast.error("No bot token available. Please set up your bot first.", { id: 'refresh-stats-error' });
+      return;
+    }
     
     if (isConnected) {
+      toast.info("Refreshing dashboard statistics...", { id: 'refresh-stats' });
       await fetchStats();
     } else {
       toast.error("Bot is not connected. Please connect first.", { id: 'refresh-stats-error' });
     }
-  }, [isConnected, fetchStats]);
+  }, [isConnected, fetchStats, token]);
 
   return { stats, loadingStats, refreshStats };
 };
