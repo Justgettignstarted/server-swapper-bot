@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { NavBar } from './NavBar';
-import { BotSetup } from './BotSetup';
+import { BotSetup } from './bot-setup/BotSetup';
 import { DocumentationModal } from './DocumentationModal';
 import { motion } from 'framer-motion';
 import { useBot } from '@/context/BotContext';
