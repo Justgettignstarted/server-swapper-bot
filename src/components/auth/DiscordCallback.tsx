@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -83,6 +84,9 @@ export const DiscordCallback = () => {
         
         // Store the complete user data in localStorage
         localStorage.setItem('discordUser', JSON.stringify(userData));
+        
+        // Clear the OAuth state as it's no longer needed
+        localStorage.removeItem('discordOAuthState');
         
         setStatus('success');
         setMessage(`Welcome, ${userData.global_name || userData.username}!`);
