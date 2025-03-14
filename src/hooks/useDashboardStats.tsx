@@ -21,6 +21,8 @@ export const useDashboardStats = () => {
   const ERROR_COOLDOWN = 10000; // 10 seconds between error messages
   const REFRESH_COOLDOWN = 3000; // 3 seconds between manual refresh attempts
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const MAX_LOADING_TIME = 15000; // 15 seconds maximum loading time
   
   const [stats, setStats] = useState<DashboardStats>({
     authorizedUsers: '0',
@@ -36,6 +38,17 @@ export const useDashboardStats = () => {
     
     fetchInProgress.current = true;
     setLoadingStats(true);
+    
+    // Set a maximum loading time
+    if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+    loadingTimeoutRef.current = setTimeout(() => {
+      if (loadingStats && fetchInProgress.current) {
+        // Force reset loading state if it's been too long
+        fetchInProgress.current = false;
+        setLoadingStats(false);
+        toast.error("Stats loading timed out. Please try again.", { id: 'stats-timeout' });
+      }
+    }, MAX_LOADING_TIME);
     
     try {
       // Get data concurrently to speed up loading
@@ -63,6 +76,12 @@ export const useDashboardStats = () => {
         toast.error('Failed to load dashboard statistics', { id: 'dashboard-stats-error' });
       }
     } finally {
+      // Clear the loading timeout
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
+      
       // Add a small delay before resetting loading state
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
@@ -95,13 +114,16 @@ export const useDashboardStats = () => {
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
       }
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
     };
   }, [isConnected, fetchStats]);
 
   // Set up subscription to transfers table
   useStatsSubscription(fetchStats);
 
-  const refreshStats = async () => {
+  const refreshStats = useCallback(async () => {
     const now = Date.now();
     
     // Check if we're already fetching or if we've refreshed too recently
@@ -122,7 +144,7 @@ export const useDashboardStats = () => {
     } else {
       toast.error("Bot is not connected. Please connect first.", { id: 'refresh-stats-error' });
     }
-  };
+  }, [isConnected, fetchStats]);
 
   return { stats, loadingStats, refreshStats };
 };

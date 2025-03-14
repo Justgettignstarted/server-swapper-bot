@@ -19,10 +19,20 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   handleRefreshStats
 }) => {
   const { status, checkConnection, connecting, isConnected } = useBot();
-
+  const [lastRefreshTime, setLastRefreshTime] = React.useState(0);
+  const REFRESH_COOLDOWN = 3000; // 3 seconds between refreshes
+  
   const handleRefreshConnection = () => {
+    // Prevent rapid refreshes
+    const now = Date.now();
+    if (now - lastRefreshTime < REFRESH_COOLDOWN) {
+      toast.info("Please wait before refreshing again");
+      return;
+    }
+    
     // Only check connection if we're not already connecting
     if (!connecting) {
+      setLastRefreshTime(now);
       checkConnection();
       toast.info("Checking bot connection...");
     } else {

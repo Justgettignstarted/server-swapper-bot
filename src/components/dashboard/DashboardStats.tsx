@@ -3,6 +3,7 @@ import React from 'react';
 import { StatisticsCard } from '@/components/StatisticsCard';
 import { Users, Server, RotateCw, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface DashboardStatsProps {
   stats: {
@@ -33,21 +34,25 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
           title="Authorized Users" 
           value={loadingStats ? 'Loading...' : stats.authorizedUsers} 
           icon={<Users className={`h-6 w-6 text-primary ${loadingStats ? 'animate-pulse' : ''}`} />} 
+          loading={loadingStats}
         />
         <StatisticsCard 
           title="Servers" 
           value={loadingStats ? 'Loading...' : stats.servers} 
           icon={<Server className={`h-6 w-6 text-primary ${loadingStats ? 'animate-pulse' : ''}`} />} 
+          loading={loadingStats}
         />
         <StatisticsCard 
           title="Transfers Completed" 
           value={loadingStats ? 'Loading...' : stats.transfers} 
           icon={<RotateCw className={`h-6 w-6 text-primary ${loadingStats ? 'animate-pulse' : ''}`} />} 
+          loading={loadingStats}
         />
         <StatisticsCard 
           title="Verification Rate" 
           value={loadingStats ? 'Loading...' : stats.verificationRate} 
           icon={<ShieldCheck className={`h-6 w-6 text-primary ${loadingStats ? 'animate-pulse' : ''}`} />} 
+          loading={loadingStats}
         />
       </div>
     </motion.div>
