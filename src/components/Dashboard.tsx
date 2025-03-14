@@ -5,9 +5,8 @@ import { BotSetup } from './bot-setup/BotSetup';
 import { DocumentationModal } from './DocumentationModal';
 import { motion } from 'framer-motion';
 import { useBot } from '@/context/BotContext';
-import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { DashboardHeader } from './dashboard/DashboardHeader';
-import { DashboardStats } from './dashboard/DashboardStats';
+import { SimpleDashboardStats } from './dashboard/SimpleDashboardStats';
 import { DashboardTabs } from './dashboard/DashboardTabs';
 import { PremiumSection } from './PremiumSection';
 import { SubscriptionStatus } from './premium/SubscriptionStatus';
@@ -27,7 +26,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onUpgrade
 }) => {
   const { isConnected } = useBot();
-  const { stats, loadingStats, refreshStats } = useDashboardStats();
   const [isDocOpen, setIsDocOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentTier, setCurrentTier] = useState<string | null>(getPremiumTier());
@@ -89,8 +87,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <DashboardHeader 
               isDocOpen={isDocOpen} 
               setIsDocOpen={setIsDocOpen}
-              loadingStats={loadingStats}
-              handleRefreshStats={refreshStats}
+              loadingStats={false}
+              handleRefreshStats={() => {}}
             />
             
             {!isConnected && (
@@ -101,11 +99,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             
             {isConnected && (
               <>
-                <DashboardStats 
-                  stats={stats} 
-                  loadingStats={loadingStats} 
-                  onRefresh={refreshStats} 
-                />
+                <SimpleDashboardStats />
                 <DashboardTabs />
               </>
             )}
