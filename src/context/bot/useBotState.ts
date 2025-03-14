@@ -20,6 +20,7 @@ export const useBotState = () => {
   const checkInProgress = useRef(false);
   const initialCheckDone = useRef(false);
   const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const maxCheckTime = useRef<NodeJS.Timeout | null>(null);
 
   const setToken = (newToken: string) => {
     if (!newToken.trim()) {
@@ -54,9 +55,31 @@ export const useBotState = () => {
       checkTimeoutRef.current = null;
     }
     
+    // Clear any existing max check time timeout
+    if (maxCheckTime.current) {
+      clearTimeout(maxCheckTime.current);
+      maxCheckTime.current = null;
+    }
+    
     checkInProgress.current = true;
     setConnecting(true);
     setStatus(prev => ({ ...prev, status: 'connecting' }));
+    
+    // Set a hard timeout to ensure we don't get stuck in connecting state
+    maxCheckTime.current = setTimeout(() => {
+      if (connecting && checkInProgress.current) {
+        console.log("Force resetting connection check state after timeout");
+        setConnecting(false);
+        checkInProgress.current = false;
+        setStatus(prev => ({
+          ...prev,
+          status: 'error',
+          error: 'Connection check timed out',
+          lastChecked: new Date()
+        }));
+        toast.error('Connection check timed out. Please try again.');
+      }
+    }, 10000); // 10 second absolute maximum
     
     try {
       console.log("Checking bot connection with token:", token ? `${token.substring(0, 10)}...` : 'none');
@@ -82,12 +105,18 @@ export const useBotState = () => {
       });
       toast.error(`Failed to check bot status: ${errorMessage}`);
     } finally {
+      // Clear the max check time timeout since we're done
+      if (maxCheckTime.current) {
+        clearTimeout(maxCheckTime.current);
+        maxCheckTime.current = null;
+      }
+      
       // Add a small delay before allowing another check
       checkTimeoutRef.current = setTimeout(() => {
         setConnecting(false);
         checkInProgress.current = false;
         checkTimeoutRef.current = null;
-      }, 2000); // 2 second cooldown
+      }, 1000); // 1 second cooldown (reduced from 2 seconds)
     }
   };
 
@@ -97,7 +126,7 @@ export const useBotState = () => {
       // Add a small delay to prevent immediate connection check on initial load
       const timer = setTimeout(() => {
         checkConnection();
-      }, 500);
+      }, 300); // Reduced delay to 300ms from 500ms
       
       return () => clearTimeout(timer);
     }
@@ -126,6 +155,9 @@ export const useBotState = () => {
       // Also clear any timeout on unmount
       if (checkTimeoutRef.current) {
         clearTimeout(checkTimeoutRef.current);
+      }
+      if (maxCheckTime.current) {
+        clearTimeout(maxCheckTime.current);
       }
     };
   }, [token, status.status]);

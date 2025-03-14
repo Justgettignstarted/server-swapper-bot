@@ -1,4 +1,3 @@
-
 // Base utilities for Discord API interactions
 
 // Discord API endpoints
@@ -29,7 +28,9 @@ export const rateLimitAwareFetch = async (endpoint: string, options: RequestInit
   
   const requestOptions = {
     ...options,
-    headers
+    headers,
+    // Add a timeout to the fetch using AbortController
+    signal: AbortSignal.timeout(5000) // 5 second timeout
   };
   
   // Add some logging to help with debugging
@@ -42,6 +43,9 @@ export const rateLimitAwareFetch = async (endpoint: string, options: RequestInit
         headers.get('Authorization')?.includes('MTEwOTkzMj')) {
       
       console.log('Using demo mode for Discord API');
+      
+      // Add a small delay to simulate network latency (but keep it fast)
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       // Return mock responses for different endpoints
       if (endpoint.includes('/users/@me')) {
@@ -109,6 +113,11 @@ export const rateLimitAwareFetch = async (endpoint: string, options: RequestInit
       // If it's already our own error, just rethrow it
       if (error.message.includes('Discord API error')) {
         throw error;
+      }
+      
+      // Check for timeout errors
+      if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+        throw new Error(`Discord API request timed out: ${endpoint}`);
       }
       
       // Otherwise, wrap it in a more descriptive error

@@ -49,28 +49,38 @@ export const checkBotStatus = async (token: string): Promise<BotStatus> => {
   console.log('Checking bot connection status...');
   
   try {
-    // Check if the bot can access its own information, which verifies the token is valid
-    const response = await rateLimitAwareFetch(`${DISCORD_API_BASE}/users/@me`, {
+    // Set up a timeout to ensure the check doesn't hang indefinitely
+    const timeoutPromise = new Promise<BotStatus>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Connection check timed out after 5 seconds'));
+      }, 5000); // 5 second timeout
+    });
+    
+    // The actual API check
+    const checkPromise = rateLimitAwareFetch(`${DISCORD_API_BASE}/users/@me`, {
       method: 'GET',
       headers: {
         'Authorization': `Bot ${token}`
       }
+    }).then(async (response) => {
+      // If we get a successful response, the bot is connected
+      const botUser = await response.json();
+      console.log('Bot is connected. Bot username:', botUser.username);
+      
+      botConnectionStatus = 'connected';
+      connectionError = null;
+      lastChecked = new Date();
+      
+      return {
+        status: 'connected',
+        error: null,
+        lastChecked: lastChecked,
+        botInfo: botUser
+      } as BotStatus;
     });
     
-    // If we get a successful response, the bot is connected
-    const botUser = await response.json();
-    console.log('Bot is connected. Bot username:', botUser.username);
-    
-    botConnectionStatus = 'connected';
-    connectionError = null;
-    lastChecked = new Date();
-    
-    return {
-      status: 'connected',
-      error: null,
-      lastChecked: lastChecked,
-      botInfo: botUser
-    };
+    // Race the check against the timeout
+    return await Promise.race([checkPromise, timeoutPromise]);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error checking bot status:', errorMessage);
